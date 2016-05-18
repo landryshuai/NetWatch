@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.tencent.noverguo.hooktest" >
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme" >
+        <meta-data
+            android:name="xposedmodule"
+            android:value="true" />
+        <meta-data
+            android:name="xposeddescription"
+            android:value="@string/app_name" />
+        <meta-data
+            android:name="xposedminversion"
+            android:value="54" />
+        <activity
+            android:name="info.noverguo.netwatch.ui.MainActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="info.noverguo.netwatch.ui.AddActivity"
+            android:label="@string/title_add_name"
+            android:theme="@style/AppTheme.NoActionBar" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="info.noverguo.netwatch.ui.MainActivity" />
+        </activity>
+        <service android:name="info.noverguo.netwatch.service.RemoteUrlService">
+            <intent-filter>
+                <action android:name="com.tencent.noverguo.hooktest.service.RemoteUrlService.check"></action>
+            </intent-filter>
+        </service>
+    </application>
+
+</manifest>

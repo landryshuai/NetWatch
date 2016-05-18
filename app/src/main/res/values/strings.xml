@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">网络守护</string>
+    <string name="title_add_name">应用网络排查</string>
+    <string name="action_settings">设置</string>
+    <string name="action_add">增加</string>
+    <string name="action_add_black">增加拦截规则</string>
+</resources>

@@ -1,0 +1,53 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+    }
+}
+
+apply plugin: 'com.android.application'
+apply plugin: 'com.neenbedankt.android-apt'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
+
+    defaultConfig {
+        applicationId "info.noverguo.netwatch"
+        minSdkVersion 16
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+ext {
+    supportVersion = "23.2.0"
+}
+
+dependencies {
+    provided fileTree(include: ['*.jar'], dir: 'libs')
+    testCompile 'junit:junit:4.12'
+    androidTestCompile 'com.android.support:support-annotations:23.2.0'
+    compile "com.android.support:support-annotations:${supportVersion}"
+    compile "com.android.support:design:${supportVersion}"
+    compile "com.android.support:appcompat-v7:${supportVersion}"
+    compile "com.android.support:cardview-v7:${supportVersion}"
+    compile "com.android.support:recyclerview-v7:${supportVersion}"
+    compile "com.android.support:percent:${supportVersion}"
+    compile "com.android.support:preference-v7:${supportVersion}"
+    compile "com.android.support:preference-v14:${supportVersion}"
+    compile "com.android.support:support-v4:${supportVersion}"
+    compile 'org.apache.commons:commons-io:1.3.2'
+    compile 'com.jakewharton:butterknife:7.0.1'
+//    compile 'com.jakewharton:butterknife:8.0.1'
+//    apt 'com.jakewharton:butterknife-compiler:8.0.1'
+}
