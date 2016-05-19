@@ -51,17 +51,14 @@ public class LocalUrlService {
             Intent intent = new Intent(IUrlService.class.getName());
             // 5.0后需要显式指定包名
             intent.setPackage("info.noverguo.netwatch");
-            if (intent != null) {
-                try {
-                    context.bindService(intent, mRemoteConnection, Context.BIND_AUTO_CREATE);
-                } catch (RuntimeException e) {
-                    e.printStackTrace();
-                    return false;
-                }
-                return true;
+            try {
+                context.bindService(intent, mRemoteConnection, Context.BIND_AUTO_CREATE);
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+                return false;
             }
         }
-        return false;
+        return true;
     }
 //    public void check(final PackageUrlSet unknownList, final CheckCallback callback) {
 //        DLog.d("LocalUrlService.check");
@@ -214,6 +211,7 @@ public class LocalUrlService {
     }
 
     private void runIfNeed() {
+        DLog.d("LocalUrlService.runIfNeed: " + urlRemoteService + ", " + tasks);
         if (urlRemoteService == null || tasks.isEmpty()) {
             return;
         }
