@@ -111,9 +111,9 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
     @Override
     public NormalTextViewHolder onCreateMultiSelectViewHolder(ViewGroup parent, int viewType) {
         if (viewType == TYPE_HEAD) {
-            return new HeadViewHolder(mLayoutInflater.inflate(R.layout.head_text, parent, false));
+            return new HeadViewHolder(mLayoutInflater.inflate(R.layout.black_list_head, parent, false));
         }
-        return new ImageTextViewHolder(mLayoutInflater.inflate(R.layout.item_content, parent, false));
+        return new ImageTextViewHolder(mLayoutInflater.inflate(R.layout.black_list_item_content, parent, false));
     }
 
     @Override

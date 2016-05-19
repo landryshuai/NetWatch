@@ -11,7 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.tencent.noverguo.hooktest.R;
-import info.noverguo.netwatch.model.HostPath;
+
 import info.noverguo.netwatch.model.PackageUrl;
 import info.noverguo.netwatch.model.PackageUrlSet;
 import info.noverguo.netwatch.model.PackageUrls;
@@ -126,9 +126,9 @@ public class PackageRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<P
     @Override
     public NormalTextViewHolder onCreateMultiSelectViewHolder(ViewGroup parent, int viewType) {
         if (viewType == TYPE_HEAD) {
-            return new HeadViewHolder(mLayoutInflater.inflate(R.layout.head_item, parent, false));
+            return new HeadViewHolder(mLayoutInflater.inflate(R.layout.package_list_head, parent, false));
         }
-        return new NormalTextViewHolder(mLayoutInflater.inflate(R.layout.item_text, parent, false));
+        return new NormalTextViewHolder(mLayoutInflater.inflate(R.layout.package_list_content, parent, false));
     }
 
     @Override
