@@ -12,6 +12,10 @@
     <TextView
         android:id="@+id/tv_content"
         android:textSize="15sp"
+        android:singleLine="true"
+        android:ellipsize="marquee"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:focusable="true"
         android:layout_gravity="center_vertical"
         android:gravity="left"
         android:layout_width="match_parent"

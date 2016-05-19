@@ -134,7 +134,7 @@ public class PackageRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<P
     @Override
     public void onBindViewHolder(NormalTextViewHolder holder, int position, boolean isSelected) {
         PackageUrl item = getItem(position);
-        holder.mContent.setText(HostPath.toSimpleUrl(item.url));
+        holder.mContent.setText(item.url);
         if (isHead(position)) {
             onBindHead((HeadViewHolder) holder, (PackageUrls) item, isSelected);
         } else {

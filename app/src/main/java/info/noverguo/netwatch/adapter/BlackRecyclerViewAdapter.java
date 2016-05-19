@@ -139,7 +139,7 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
     }
 
     private void bindIconAndText(ImageTextViewHolder holder, PackageUrl item, boolean isSelected) {
-        holder.mContent.setText(HostPath.toSimpleUrl(item.url));
+        holder.mContent.setText(item.url);
         if (UrlServiceUtils.isUserAddPackage(item.packageName)) {
             holder.mIcon.setImageResource(R.drawable.ic_edit);
         } else {

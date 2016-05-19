@@ -2,30 +2,40 @@ package info.noverguo.netwatch.ui;
 
 import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.RemoteException;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.tencent.noverguo.hooktest.R;
 import info.noverguo.netwatch.adapter.BlackRecyclerViewAdapter;
 import info.noverguo.netwatch.adapter.MultiSelectRecyclerViewAdapter;
+import info.noverguo.netwatch.model.PackageUrl;
 import info.noverguo.netwatch.model.PackageUrlSet;
 import info.noverguo.netwatch.receiver.ReloadReceiver;
 import info.noverguo.netwatch.service.LocalUrlService;
 import info.noverguo.netwatch.utils.DLog;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import info.noverguo.netwatch.utils.UrlServiceUtils;
 
 public class MainActivity extends AppCompatActivity {
     final static String TAG = MainActivity.class.getSimpleName();
@@ -103,12 +113,14 @@ public class MainActivity extends AppCompatActivity {
         reloadBlackReceiver = ReloadReceiver.registerReloadBlack(getApplicationContext(), new Runnable() {
             @Override
             public void run() {
+                resetAdapter();
                 reloadBlack();
             }
         });
         reloadPackageReceiver = ReloadReceiver.registerReloadBlack(getApplicationContext(), new Runnable() {
             @Override
             public void run() {
+                resetAdapter();
                 reloadPackage();
             }
         });
@@ -123,7 +135,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void editBlackUrl() {
+        if (blackAdapter.getSelectedItemCount() == 0) {
+            return;
+        }
+        final PackageUrl item = blackAdapter.getItem(blackAdapter.getSelectedItems().get(0));
         // TODO 修改拦截规则
+        new MaterialDialog.Builder(this)
+                .title(R.string.dialog_title_add)
+                .inputType(InputType.TYPE_CLASS_TEXT)
+                .inputRange(1, 50, Color.RED)
+                .input(getString(R.string.dialog_add_input_hint), item.url, new MaterialDialog.InputCallback() {
+                    @Override
+                    public void onInput(MaterialDialog dialog, CharSequence input) {
+                        urlService.removeBlackUrls(Arrays.asList(new PackageUrlSet(item.packageName, Arrays.asList(item.url))), null);
+                        urlService.addBlackUrls(Arrays.asList(new PackageUrlSet(item.packageName, Arrays.asList(input.toString()))), null);
+                    }
+                })
+                .negativeText(R.string.dialog_btn_cancel)
+                .positiveText(R.string.dialog_btn_edit).build().show();
     }
 
     private void removeBlackUrls() {
@@ -190,7 +219,18 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(this, AddActivity.class));
             return true;
         } else if (id == R.id.action_add_black) {
-
+            new MaterialDialog.Builder(this)
+                    .title(R.string.dialog_title_add)
+                    .inputType(InputType.TYPE_CLASS_TEXT)
+                    .inputRange(1, 80, Color.RED)
+                    .input(getString(R.string.dialog_add_input_hint), "", new MaterialDialog.InputCallback() {
+                        @Override
+                        public void onInput(MaterialDialog dialog, CharSequence input) {
+                            urlService.addBlackUrls(Arrays.asList(new PackageUrlSet(UrlServiceUtils.USER_ADD_PACKAGE, Arrays.asList(input.toString()))), null);
+                        }
+                    })
+                    .negativeText(R.string.dialog_btn_cancel)
+                    .positiveText(R.string.dialog_btn_add).build().show();
             return true;
         }
 

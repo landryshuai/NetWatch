@@ -24,7 +24,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * Created by noverguo on 2016/5/10.
  */
 public class LocalUrlService {
-    private static final String ACTION_CHECK = "info.noverguo.netwatch.service.RemoteUrlService.check";
     private Context context;
     private String packageName;
     public LocalUrlService(Context context) {
@@ -47,10 +46,22 @@ public class LocalUrlService {
 
     ExecutorService executorService = Executors.newSingleThreadExecutor();
     LinkedList<Runnable> tasks = new LinkedList<>();
-    private void init() {
+    private boolean init() {
         if (urlRemoteService == null) {
-            context.bindService(new Intent(ACTION_CHECK), mRemoteConnection, Context.BIND_AUTO_CREATE);
+            Intent intent = new Intent(IUrlService.class.getName());
+            // 5.0后需要显式指定包名
+            intent.setPackage("info.noverguo.netwatch");
+            if (intent != null) {
+                try {
+                    context.bindService(intent, mRemoteConnection, Context.BIND_AUTO_CREATE);
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
+                    return false;
+                }
+                return true;
+            }
         }
+        return false;
     }
 //    public void check(final PackageUrlSet unknownList, final CheckCallback callback) {
 //        DLog.d("LocalUrlService.check");
@@ -72,8 +83,10 @@ public class LocalUrlService {
 //    }
 
     public Set<String> checkHost(final String url, final String host, final String path) {
-        DLog.d("LocalUrlService.checkHost");
-        init();
+        DLog.d("LocalUrlService.checkHost: " + url + ", " + host + ", " + path);
+        if (!init()) {
+            return null;
+        }
         final AtomicReference<List<String>> result = new AtomicReference<>();
         tasks.addFirst(new Runnable() {
             @Override
@@ -110,7 +123,9 @@ public class LocalUrlService {
 
     public void getAccessUrls(final GetUrlsCallback callback) {
         DLog.d("LocalUrlService.getUrls");
-        init();
+        if (!init()) {
+            return;
+        }
         tasks.add(new Runnable() {
             @Override
             public void run() {
@@ -132,7 +147,9 @@ public class LocalUrlService {
 
     public void getBlackUrls(final GetUrlsCallback callback) {
         DLog.d("LocalUrlService.getUrls");
-        init();
+        if (!init()) {
+            return;
+        }
         tasks.add(new Runnable() {
             @Override
             public void run() {
@@ -153,8 +170,10 @@ public class LocalUrlService {
     }
 
     public void addBlackUrls(final List<PackageUrlSet> blackUrls, final ErrorCallback callback) {
-        DLog.d("LocalUrlService.addBlackUrls");
-        init();
+        DLog.d("LocalUrlService.addBlackUrls: " + blackUrls);
+        if (!init()) {
+            return;
+        }
         tasks.add(new Runnable() {
             @Override
             public void run() {
@@ -173,8 +192,10 @@ public class LocalUrlService {
     }
 
     public void removeBlackUrls(final List<PackageUrlSet> blackUrls, final ErrorCallback callback) {
-        DLog.d("LocalUrlService.addBlackUrls");
-        init();
+        DLog.d("LocalUrlService.removeBlackUrls: " + blackUrls);
+        if (!init()) {
+            return;
+        }
         tasks.add(new Runnable() {
             @Override
             public void run() {

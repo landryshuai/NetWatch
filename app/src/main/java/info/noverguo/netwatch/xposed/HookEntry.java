@@ -31,6 +31,7 @@ public class HookEntry implements IXposedHookLoadPackage {
 //        if(!lp.isFirstApplication) {
 //            return;
 //        }
+        DLog.i("handleLoadPackage: " + lp.packageName);
         // 不注入自己
         if("com.tencent.noverguo.hooktest".equals(lp.packageName)) {
             return;

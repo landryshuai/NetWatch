@@ -36,7 +36,7 @@ ext {
 dependencies {
     provided fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
-    androidTestCompile 'com.android.support:support-annotations:23.2.0'
+    androidTestCompile 'com.android.support:support-annotations:23.4.0'
     compile "com.android.support:support-annotations:${supportVersion}"
     compile "com.android.support:design:${supportVersion}"
     compile "com.android.support:appcompat-v7:${supportVersion}"
@@ -48,6 +48,9 @@ dependencies {
     compile "com.android.support:support-v4:${supportVersion}"
     compile 'org.apache.commons:commons-io:1.3.2'
     compile 'com.jakewharton:butterknife:7.0.1'
+    compile 'io.reactivex:rxandroid:1.1.0'
+    compile 'io.reactivex:rxjava:1.1.0'
+    compile 'com.afollestad.material-dialogs:core:0.8.5.9'
 //    compile 'com.jakewharton:butterknife:8.0.1'
 //    apt 'com.jakewharton:butterknife-compiler:8.0.1'
 }

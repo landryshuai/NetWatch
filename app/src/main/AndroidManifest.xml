@@ -35,9 +35,9 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="info.noverguo.netwatch.ui.MainActivity" />
         </activity>
-        <service android:name="info.noverguo.netwatch.service.RemoteUrlService">
+        <service android:name="info.noverguo.netwatch.service.RemoteUrlService" android:exported="true">
             <intent-filter>
-                <action android:name="com.tencent.noverguo.hooktest.service.RemoteUrlService.check"></action>
+                <action android:name="info.noverguo.netwatch.service.IUrlService"></action>
             </intent-filter>
         </service>
     </application>

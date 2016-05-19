@@ -4,4 +4,10 @@
     <string name="action_settings">设置</string>
     <string name="action_add">增加</string>
     <string name="action_add_black">增加拦截规则</string>
+    <string name="dialog_title_add">增加拦截规则</string>
+    <string name="dialog_btn_add">增加</string>
+    <string name="dialog_btn_edit">修改</string>
+    <string name="dialog_btn_cancel">取消</string>
+    <string name="dialog_add_input_hint">可用通配符*代表多个字符，如*.qq.com</string>
+    <string name="dialog_add_input_prefill">匹配规则</string>
 </resources>

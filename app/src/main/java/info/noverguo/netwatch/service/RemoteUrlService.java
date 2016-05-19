@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import info.noverguo.netwatch.model.HostPath;
 import info.noverguo.netwatch.model.PackageUrlSet;
@@ -87,6 +88,7 @@ public class RemoteUrlService extends Service {
 
             @Override
             public void addBlackUrls(List<PackageUrlSet> blackUrls) throws RemoteException {
+                DLog.i("addBlackUrls: " + blackUrls);
                 PackageUrlSet.put(packageBlackList, blackUrls);
                 reloadBlackList();
             }
