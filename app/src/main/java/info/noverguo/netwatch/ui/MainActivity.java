@@ -42,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
     LocalUrlService urlService;
     @Bind(R.id.rv_urls)
     RecyclerView mRecyclerView;
+    @Bind(R.id.toolbar)
+    Toolbar mToolbar;
     @Bind(R.id.fab)
     FloatingActionButton mFab;
     BlackRecyclerViewAdapter blackAdapter;
@@ -58,13 +60,12 @@ public class MainActivity extends AppCompatActivity {
     private void initView() {
         DLog.i("initView start");
         ButterKnife.bind(this);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        setSupportActionBar(mToolbar);
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));//这里用线性显示 类似于listview
         DLog.i("initView end");
     }
-
+    int mSelectCount;
     private void initData() {
         DLog.i("initData start");
         urlService = new LocalUrlService(getApplicationContext());
@@ -73,32 +74,25 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSelect(int selectCount) {
                 Log.i(TAG, "onSelect: " + selectCount);
+                mSelectCount = selectCount;
+                invalidateOptionsMenu();
                 if (selectCount == 0) {
+//                    getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+                    mToolbar.setTitle(R.string.app_name);
                     mFab.setVisibility(View.INVISIBLE);
                     return;
                 }
+//                getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+                mToolbar.setTitle("已选择" + selectCount + "条规则");
                 mFab.setVisibility(View.VISIBLE);
-                if (selectCount == 1) {
-                    mFab.setImageResource(R.drawable.ic_edit_white_24dp);
-                    mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorAccent)));
-//                    mFab.setBackgroundColor(getResources().getColor(R.color.colorAccent));
-                    mFab.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            editBlackUrl();
-                        }
-                    });
-                } else {
-                    mFab.setImageResource(R.drawable.ic_clear_white_24dp);
-                    mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorWarning)));
-//                    mFab.setBackgroundColor(getResources().getColor(R.color.colorWarning));
-                    mFab.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            removeBlackUrls();
-                        }
-                    });
-                }
+                mFab.setImageResource(R.drawable.ic_clear_white_24dp);
+                mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorWarning)));
+                mFab.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        removeBlackUrls();
+                    }
+                });
             }
         });
         mRecyclerView.setAdapter(blackAdapter);
@@ -113,15 +107,19 @@ public class MainActivity extends AppCompatActivity {
         reloadBlackReceiver = ReloadReceiver.registerReloadBlack(getApplicationContext(), new Runnable() {
             @Override
             public void run() {
-                resetAdapter();
-                reloadBlack();
+                if (blackAdapter.getSelectedItemCount() == 0) {
+                    resetAdapter();
+                    reloadBlack();
+                }
             }
         });
         reloadPackageReceiver = ReloadReceiver.registerReloadBlack(getApplicationContext(), new Runnable() {
             @Override
             public void run() {
-                resetAdapter();
-                reloadPackage();
+                if (blackAdapter.getSelectedItemCount() == 0) {
+                    resetAdapter();
+                    reloadPackage();
+                }
             }
         });
         reloadUrls();
@@ -132,32 +130,6 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         reloadBlackReceiver.unregister(getApplicationContext());
         reloadPackageReceiver.unregister(getApplicationContext());
-    }
-
-    private void editBlackUrl() {
-        if (blackAdapter.getSelectedItemCount() == 0) {
-            return;
-        }
-        final PackageUrl item = blackAdapter.getItem(blackAdapter.getSelectedItems().get(0));
-        // TODO 修改拦截规则
-        new MaterialDialog.Builder(this)
-                .title(R.string.dialog_title_add)
-                .inputType(InputType.TYPE_CLASS_TEXT)
-                .inputRange(1, 50, Color.RED)
-                .input(getString(R.string.dialog_add_input_hint), item.url, new MaterialDialog.InputCallback() {
-                    @Override
-                    public void onInput(MaterialDialog dialog, CharSequence input) {
-                        urlService.removeBlackUrls(Arrays.asList(new PackageUrlSet(item.packageName, Arrays.asList(item.url))), null);
-                        urlService.addBlackUrls(Arrays.asList(new PackageUrlSet(item.packageName, Arrays.asList(input.toString()))), null);
-                    }
-                })
-                .negativeText(R.string.dialog_btn_cancel)
-                .positiveText(R.string.dialog_btn_edit).build().show();
-    }
-
-    private void removeBlackUrls() {
-        urlService.removeBlackUrls(blackAdapter.getSelectUrls(), null);
-        resetAdapter();
     }
 
 
@@ -205,10 +177,22 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public void onBackPressed() {
+        if (!cancelSelected()) {
+            super.onBackPressed();
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        if (mSelectCount == 0) {
+            getMenuInflater().inflate(R.menu.menu_main, menu);
+        } else if (mSelectCount == 1) {
+            getMenuInflater().inflate(R.menu.menu_main_edit, menu);
+        } else {
+            getMenuInflater().inflate(R.menu.menu_main_del, menu);
+        }
         return true;
     }
 
@@ -217,23 +201,66 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
         if (id == R.id.action_add) {
             startActivity(new Intent(this, AddActivity.class));
-            return true;
         } else if (id == R.id.action_add_black) {
-            new MaterialDialog.Builder(this)
-                    .title(R.string.dialog_title_add)
-                    .inputType(InputType.TYPE_CLASS_TEXT)
-                    .inputRange(1, 80, Color.RED)
-                    .input(getString(R.string.dialog_add_input_hint), "", new MaterialDialog.InputCallback() {
-                        @Override
-                        public void onInput(MaterialDialog dialog, CharSequence input) {
-                            urlService.addBlackUrls(Arrays.asList(new PackageUrlSet(UrlServiceUtils.USER_ADD_PACKAGE, Arrays.asList(input.toString()))), null);
-                        }
-                    })
-                    .negativeText(R.string.dialog_btn_cancel)
-                    .positiveText(R.string.dialog_btn_add).build().show();
+            addBlackUrl();
+        } else if (id == R.id.action_edit_black) {
+            editBlackUrl();
+        } else if (id == R.id.action_del_black) {
+            removeBlackUrls();
+        } else if (id == R.id.action_cancel_select) {
+            cancelSelected();
+        } else {
+            return super.onOptionsItemSelected(item);
+        }
+        return true;
+    }
+
+    private boolean cancelSelected() {
+        if (blackAdapter.getSelectedItemCount() > 0) {
+            blackAdapter.clearSelectedState();
             return true;
         }
+        return false;
+    }
 
-        return super.onOptionsItemSelected(item);
+    private void addBlackUrl() {
+        new MaterialDialog.Builder(this)
+                .title(R.string.dialog_title_add)
+                .inputType(InputType.TYPE_CLASS_TEXT)
+                .inputRange(1, 80, Color.RED)
+                .input(getString(R.string.dialog_add_input_hint), "", new MaterialDialog.InputCallback() {
+                    @Override
+                    public void onInput(MaterialDialog dialog, CharSequence input) {
+                        urlService.addBlackUrls(Arrays.asList(new PackageUrlSet(UrlServiceUtils.USER_ADD_PACKAGE, Arrays.asList(input.toString()))), null);
+                    }
+                })
+                .negativeText(R.string.dialog_btn_cancel)
+                .positiveText(R.string.dialog_btn_add).build().show();
+    }
+
+    private void editBlackUrl() {
+        if (blackAdapter.getSelectedItemCount() == 0) {
+            return;
+        }
+        final PackageUrl item = blackAdapter.getItem(blackAdapter.getSelectedItems().get(0));
+        // TODO 修改拦截规则
+        new MaterialDialog.Builder(this)
+                .title(R.string.dialog_title_add)
+                .inputType(InputType.TYPE_CLASS_TEXT)
+                .inputRange(1, 50, Color.RED)
+                .input(getString(R.string.dialog_add_input_hint), item.url, new MaterialDialog.InputCallback() {
+                    @Override
+                    public void onInput(MaterialDialog dialog, CharSequence input) {
+                        urlService.removeBlackUrls(Arrays.asList(new PackageUrlSet(item.packageName, Arrays.asList(item.url))), null);
+                        urlService.addBlackUrls(Arrays.asList(new PackageUrlSet(item.packageName, Arrays.asList(input.toString()))), null);
+                    }
+                })
+                .negativeText(R.string.dialog_btn_cancel)
+                .positiveText(R.string.dialog_btn_edit).build().show();
+    }
+
+    private void removeBlackUrls() {
+        urlService.removeBlackUrls(blackAdapter.getSelectUrls(), null);
+        resetAdapter();
     }
 }

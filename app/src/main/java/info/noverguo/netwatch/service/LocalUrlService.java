@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -85,6 +86,7 @@ public class LocalUrlService {
             return null;
         }
         final AtomicReference<List<String>> result = new AtomicReference<>();
+        final AtomicBoolean isRun = new AtomicBoolean(false);
         tasks.addFirst(new Runnable() {
             @Override
             public void run() {
@@ -96,16 +98,19 @@ public class LocalUrlService {
                 synchronized (host) {
                     host.notify();
                 }
+                isRun.set(true);
                 runIfNeed();
             }
         });
         runIfNeed();
-        try {
-            synchronized (host) {
-                host.wait();
+        while(!isRun.get()) {
+            try {
+                synchronized (host) {
+                    host.wait();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
         List<String> blackUrls = result.get();
         DLog.d("LocalUrlService.checkHost result: " + blackUrls);

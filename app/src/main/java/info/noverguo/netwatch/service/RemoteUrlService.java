@@ -7,11 +7,14 @@ import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import info.noverguo.netwatch.PrefSetting;
 import info.noverguo.netwatch.model.HostPath;
 import info.noverguo.netwatch.model.PackageUrlSet;
 import info.noverguo.netwatch.receiver.ReloadReceiver;
 import info.noverguo.netwatch.utils.DLog;
+import info.noverguo.netwatch.utils.RxJavaUtils;
 import info.noverguo.netwatch.utils.UrlServiceUtils;
+import rx.functions.Action1;
 
 import org.apache.commons.io.IOUtils;
 
@@ -37,11 +40,13 @@ public class RemoteUrlService extends Service {
     Map<String, Pattern> regexHostBlackList;
     Map<String, Set<String>> regexBlackList;
     Map<String, PackageUrlSet> packageUrlList;
-
+    PrefSetting setting;
     @Override
     public void onCreate() {
         super.onCreate();
+        setting = new PrefSetting(getApplicationContext());
         initBlackList();
+        load();
         reloadBlackList();
     }
 
@@ -90,12 +95,14 @@ public class RemoteUrlService extends Service {
             public void addBlackUrls(List<PackageUrlSet> blackUrls) throws RemoteException {
                 DLog.i("addBlackUrls: " + blackUrls);
                 PackageUrlSet.put(packageBlackList, blackUrls);
+                store();
                 reloadBlackList();
             }
 
             @Override
             public void removeBlackUrls(List<PackageUrlSet> blackUrls) throws RemoteException {
                 PackageUrlSet.remove(packageBlackList, blackUrls);
+                store();
                 reloadBlackList();
             }
         };
@@ -120,29 +127,29 @@ public class RemoteUrlService extends Service {
             regexHostBlackList = new HashMap<>();
             regexBlackList = new HashMap<>();
         }
-        File file = new File("/data/local/tmp/black_list.txt");
-        List<String> urls = null;
-        try {
-            urls = IOUtils.readLines(new FileInputStream(file));
-        } catch (IOException e) {
-        }
-        if (urls == null) {
-            urls = new ArrayList<>();
-            urls.add("http://mobads.baidu.com/cpro/ui/mads.php?code2=UM");
-            urls.add("http://mobads.baidu.com/cpro/ui/123456789/123456789/123456789/123456789/123456789/mads.php?code2=UM");
-            urls.add("http://mobads-logs.baidu.com/");
-        }
-        synchronized (RemoteUrlService.class) {
-            PackageUrlSet packageUrlSet = new PackageUrlSet(UrlServiceUtils.USER_ADD_PACKAGE);
-            for (String url : urls) {
-                url = url.trim();
-                if (url.startsWith("#")) {
-                    continue;
-                }
-                packageUrlSet.relativeUrls.add(url);
-            }
-            packageBlackList.put(UrlServiceUtils.USER_ADD_PACKAGE, packageUrlSet);
-        }
+//        File file = new File("/data/local/tmp/black_list.txt");
+//        List<String> urls = null;
+//        try {
+//            urls = IOUtils.readLines(new FileInputStream(file));
+//        } catch (IOException e) {
+//        }
+//        if (urls == null) {
+//            urls = new ArrayList<>();
+//            urls.add("http://mobads.baidu.com/cpro/ui/mads.php?code2=UM");
+//            urls.add("http://mobads.baidu.com/cpro/ui/123456789/123456789/123456789/123456789/123456789/mads.php?code2=UM");
+//            urls.add("http://mobads-logs.baidu.com/");
+//        }
+//        synchronized (RemoteUrlService.class) {
+//            PackageUrlSet packageUrlSet = new PackageUrlSet(UrlServiceUtils.USER_ADD_PACKAGE);
+//            for (String url : urls) {
+//                url = url.trim();
+//                if (url.startsWith("#")) {
+//                    continue;
+//                }
+//                packageUrlSet.relativeUrls.add(url);
+//            }
+//            packageBlackList.put(UrlServiceUtils.USER_ADD_PACKAGE, packageUrlSet);
+//        }
     }
 
     private void reloadBlackList() {
@@ -167,6 +174,44 @@ public class RemoteUrlService extends Service {
             }
         }
         ReloadReceiver.sendReloadBlack(getApplicationContext());
+    }
+
+    private void store() {
+        try {
+            synchronized (RemoteUrlService.class) {
+                setting.putPackageBlackList(packageBlackList);
+            }
+            synchronized (RemoteUrlService.class) {
+                setting.putPackageUrlList(packageUrlList);
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void load() {
+        try {
+            RxJavaUtils.io2AndroidMain(setting.getPackageBlackList()).subscribe(new Action1<Map<String, PackageUrlSet>>() {
+                @Override
+                public void call(Map<String, PackageUrlSet> res) {
+                    synchronized (RemoteUrlService.class) {
+                        packageBlackList.clear();
+                        packageBlackList.putAll(res);
+                    }
+                }
+            });
+            RxJavaUtils.io2AndroidMain(setting.getPackageUrlList()).subscribe(new Action1<Map<String, PackageUrlSet>>() {
+                @Override
+                public void call(Map<String, PackageUrlSet> res) {
+                    synchronized (RemoteUrlService.class) {
+                        packageUrlList.clear();
+                        packageUrlList.putAll(res);
+                    }
+                }
+            });
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
 

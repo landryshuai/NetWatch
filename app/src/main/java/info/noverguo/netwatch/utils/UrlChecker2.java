@@ -5,6 +5,7 @@ import android.content.Context;
 import info.noverguo.netwatch.PrefSetting;
 import info.noverguo.netwatch.receiver.ReloadReceiver;
 import info.noverguo.netwatch.service.LocalUrlService;
+import rx.functions.Action1;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -294,8 +295,19 @@ public class UrlChecker2 {
     }
 
     private void load() {
-        blackList.putAll(toMap(setting.getBlackList()));
-        whiteList.putAll(toMap(setting.getWhiteList()));
+        RxJavaUtils.io2AndroidMain(setting.getBlackList()).subscribe(new Action1<Set<String>>() {
+            @Override
+            public void call(Set<String> res) {
+                blackList.putAll(toMap(res));
+            }
+        });
+
+        RxJavaUtils.io2AndroidMain(setting.getWhiteList()).subscribe(new Action1<Set<String>>() {
+            @Override
+            public void call(Set<String> res) {
+                whiteList.putAll(toMap(res));
+            }
+        });
     }
 
     private Map<String, Set<String>> toMap(Set<String> urls) {

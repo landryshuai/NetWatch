@@ -38,6 +38,8 @@ public class AddActivity extends AppCompatActivity {
     LocalUrlService urlService;
     @Bind(R.id.rv_urls)
     RecyclerView mRecyclerView;
+    @Bind(R.id.toolbar)
+    Toolbar mToolbar;
     @Bind(R.id.fab)
     FloatingActionButton mFab;
     PackageRecyclerViewAdapter packageAdapter;
@@ -54,8 +56,7 @@ public class AddActivity extends AppCompatActivity {
     private void initView() {
         DLog.i("initView start");
         ButterKnife.bind(this);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        setSupportActionBar(mToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));//这里用线性显示 类似于listview
@@ -77,8 +78,10 @@ public class AddActivity extends AppCompatActivity {
                 Log.i(TAG, "onSelect: " + selectCount);
                 if (selectCount == 0) {
                     mFab.setVisibility(View.INVISIBLE);
+                    mToolbar.setTitle(R.string.title_add_name);
                     return;
                 }
+                mToolbar.setTitle("已选择" + selectCount + "条规则");
                 mFab.setVisibility(View.VISIBLE);
                 if (selectCount > 0) {
                     mFab.setImageResource(R.drawable.ic_done_white_24dp);
@@ -105,13 +108,19 @@ public class AddActivity extends AppCompatActivity {
         reloadBlackReceiver = ReloadReceiver.registerReloadBlack(getApplicationContext(), new Runnable() {
             @Override
             public void run() {
-                reloadBlack();
+                if (packageAdapter.getSelectedItemCount() == 0) {
+                    resetAdapter();
+                    reloadBlack();
+                }
             }
         });
         reloadPackageReceiver = ReloadReceiver.registerReloadBlack(getApplicationContext(), new Runnable() {
             @Override
             public void run() {
-                reloadPackage();
+                if (packageAdapter.getSelectedItemCount() == 0) {
+                    resetAdapter();
+                    reloadPackage();
+                }
             }
         });
         reloadUrls();
@@ -173,25 +182,9 @@ public class AddActivity extends AppCompatActivity {
         });
     }
 
-    private List<String> toList(Map<String, Set<String>> urlSet) {
-        List<String> result = new ArrayList<>();
-        for (Map.Entry<String, Set<String>> entry : urlSet.entrySet()) {
-            String host = entry.getKey();
-            Set<String> paths = entry.getValue();
-            if (SizeUtils.isEmpty(paths)) {
-                result.add(host + "/");
-            } else {
-                for (String path : entry.getValue()) {
-                    result.add(host + path);
-                }
-            }
-        }
-        return result;
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main_add, menu);
+        getMenuInflater().inflate(R.menu.menu_add, menu);
         return true;
     }
 

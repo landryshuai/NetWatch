@@ -1,11 +1,17 @@
 package info.noverguo.netwatch.utils;
 
+import android.app.AndroidAppHelper;
 import android.content.Context;
+import android.text.TextUtils;
 
 import com.tencent.noverguo.hooktest.BuildConfig;
 import info.noverguo.netwatch.PrefSetting;
 import info.noverguo.netwatch.receiver.ReloadReceiver;
 import info.noverguo.netwatch.service.LocalUrlService;
+import rx.Observer;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -143,10 +149,17 @@ public class UrlChecker {
     }
 
     public boolean validateSocket(String host, String address, int port) {
-        if (port > 0) {
-            return validateSocket(host + (port == 80 ? "" : ":" + port)) || validateSocket(address + ":" + port);
+        String val = host;
+        if (TextUtils.isEmpty(val)) {
+            val = address;
         }
-        return validateSocket(host) || validateSocket(address);
+        if (port > 0) {
+            if (port == 80) {
+                return validateHost("http://" + val, val);
+            }
+            return validateSocket(val + ":" + port);
+        }
+        return validateSocket(val);
     }
 
     private void put(Map<String, Set<String>> map, String key, String val) {
@@ -162,8 +175,19 @@ public class UrlChecker {
     }
 
     private void load() {
-        blackList.putAll(toMap(setting.getBlackList()));
-        whiteList.putAll(toMap(setting.getWhiteList()));
+        RxJavaUtils.io2AndroidMain(setting.getBlackList()).subscribe(new Action1<Set<String>>() {
+            @Override
+            public void call(Set<String> res) {
+                blackList.putAll(toMap(res));
+            }
+        });
+
+        RxJavaUtils.io2AndroidMain(setting.getWhiteList()).subscribe(new Action1<Set<String>>() {
+            @Override
+            public void call(Set<String> res) {
+                whiteList.putAll(toMap(res));
+            }
+        });
     }
 
     private Map<String, Set<String>> toMap(Set<String> urls) {
