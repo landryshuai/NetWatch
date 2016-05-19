@@ -26,6 +26,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  */
 public class HookEntry implements IXposedHookLoadPackage {
     private UrlChecker urlChecker;
+    static int count = 0;
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lp) throws Throwable {
 //        if(!lp.isFirstApplication) {
@@ -33,18 +34,15 @@ public class HookEntry implements IXposedHookLoadPackage {
 //        }
         DLog.i("handleLoadPackage: " + lp.packageName);
         // 不注入自己
-        if("com.tencent.noverguo.hooktest".equals(lp.packageName)) {
+        if("com.tencent.noverguo.hooktest".equals(lp.packageName) || count > 0) {
             return;
         }
-        final String packageName = lp.packageName;
-        DLog.setHead(packageName);
         if (lp.appInfo == null) {
             DLog.d("appinfo is null");
             return;
         }
-//        if(!"com.baidu.mobads.demo.main".equals(lp.packageName)) {
-//            return;
-//        }
+        final String packageName = lp.packageName;
+        DLog.setHead(packageName);
 
         String applicationClass = lp.appInfo.className;
         if (applicationClass == null) {
@@ -56,7 +54,7 @@ public class HookEntry implements IXposedHookLoadPackage {
                 applicationClass = Application.class.getName();
             }
         }
-        DLog.d("app class: " + applicationClass);
+        DLog.d("app class: " + applicationClass + ", " + count++);
         XposedHelpers.findAndHookMethod(applicationClass, lp.classLoader, "onCreate", new MethodHook() {
             @Override
             public void afterHooked(MethodHookParam param) throws Throwable {

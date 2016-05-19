@@ -15,6 +15,7 @@ import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
@@ -217,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean cancelSelected() {
         if (blackAdapter.getSelectedItemCount() > 0) {
-            blackAdapter.clearSelectedState();
+            resetAdapter();
             return true;
         }
         return false;

@@ -24,6 +24,8 @@ import java.util.Map;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action0;
 
 /**
  * Created by noverguo on 2016/5/11.
@@ -64,7 +66,7 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
 
     public void setUrls(List<PackageUrlSet> packageBlackList, List<PackageUrlSet> packageUrlList) {
         List<PackageUrlMap> _blackUrls = new ArrayList<>();
-        SparseArray<PackageUrlMap> _headItemIndexes = new SparseArray<>();
+        final SparseArray<PackageUrlMap> _headItemIndexes = new SparseArray<>();
         int _count = 0;
         for (PackageUrlSet pus : packageBlackList) {
             String packageName = pus.packageName;
@@ -76,10 +78,16 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
                 _count += blackUrlMap.size();
             }
         }
-        synchronized (this) {
-            headItemIndexes = _headItemIndexes;
-            count = _count;
-        }
+        final int tmpCount = _count;
+        AndroidSchedulers.mainThread().createWorker().schedule(new Action0() {
+            @Override
+            public void call() {
+                synchronized (BlackRecyclerViewAdapter.this) {
+                    headItemIndexes = _headItemIndexes;
+                    count = tmpCount;
+                }
+            }
+        });
     }
 
     @Override

@@ -25,6 +25,8 @@ import java.util.Map;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action0;
 
 /**
  * Created by noverguo on 2016/5/11.
@@ -73,8 +75,8 @@ public class PackageRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<P
     public void setUrls(List<PackageUrlSet> packageBlackList, List<PackageUrlSet> packageUrlList) {
         DLog.i("PackageRecyclerViewAdapter.setUrls.packageBlackList: " + packageBlackList);
         DLog.i("PackageRecyclerViewAdapter.setUrls.packageUrlList: " + packageUrlList);
-        SparseArray<PackageUrlSet> _headItemIndexes = new SparseArray<>();
-        SparseArray<PackageUrlSet> _interceptItems = new SparseArray<>();
+        final SparseArray<PackageUrlSet> _headItemIndexes = new SparseArray<>();
+        final SparseArray<PackageUrlSet> _interceptItems = new SparseArray<>();
         int _count = 0;
         for (PackageUrlSet pus : packageUrlList) {
             String packageName = pus.packageName;
@@ -94,11 +96,18 @@ public class PackageRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<P
                 _count += packageUrlSet.relativeUrls.size();
             }
         }
-        synchronized (this) {
-            interceptItems = _interceptItems;
-            headItemIndexes = _headItemIndexes;
-            count = _count;
-        }
+        final int tmpCount = _count;
+        // 保证在主线程运行
+        AndroidSchedulers.mainThread().createWorker().schedule(new Action0() {
+            @Override
+            public void call() {
+                synchronized (PackageRecyclerViewAdapter.this) {
+                    interceptItems = _interceptItems;
+                    headItemIndexes = _headItemIndexes;
+                    count = tmpCount;
+                }
+            }
+        });
     }
 
     @Override
