@@ -34,4 +34,8 @@ public class RxJavaUtils {
         return src.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
     }
 
+    public static <T> Observable<T> io2io(Observable<T> src) {
+        return src.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
+    }
+
 }

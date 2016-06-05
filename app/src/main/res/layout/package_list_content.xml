@@ -3,23 +3,52 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp"
-    android:paddingLeft="50dp"
-    android:id="@+id/ll_item"
+    android:id="@+id/ll_all"
     android:orientation="horizontal"
+    android:focusable="false"
     android:background="@android:color/white">
-    <TextView
-        android:id="@+id/tv_content"
-        android:textSize="15sp"
-        android:singleLine="true"
-        android:ellipsize="marquee"
-        android:marqueeRepeatLimit="marquee_forever"
-        android:focusable="true"
-        android:layout_gravity="center_vertical"
-        android:gravity="left"
+    <LinearLayout
+        android:id="@+id/ll_item"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="#444444"
-        android:background="@android:color/transparent"/>
+        android:layout_marginTop="1dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:paddingLeft="20dp"
+        android:paddingRight="10dp"
+        android:background="@android:color/white">
+        <TextView
+            android:id="@+id/tv_content"
+            android:textSize="15sp"
+            android:singleLine="true"
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="0"
+            android:focusable="false"
+            android:layout_gravity="center_vertical"
+            android:gravity="left"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:textColor="#444444"
+            android:background="@android:color/transparent"/>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:orientation="horizontal"
+            android:gravity="right">
+            <TextView
+                android:layout_alignParentTop="true"
+                android:layout_alignParentRight="true"
+                android:id="@+id/tv_count"
+                android:textSize="13sp"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textColor="#333333"
+                android:text="@null"/>
+        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>

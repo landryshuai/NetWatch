@@ -3,11 +3,14 @@ package info.noverguo.netwatch.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.tencent.noverguo.hooktest.BuildConfig;
+
 import info.noverguo.netwatch.utils.DLog;
 import info.noverguo.netwatch.utils.SizeUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -152,8 +155,8 @@ public class PackageUrlSet implements Parcelable {
         }
     }
 
-    public static List<PackageUrlSet> copy(List<PackageUrlSet> src) {
-        DLog.i("PackageUrlSet.copy: " + src);
+    public static List<PackageUrlSet> copy(Collection<PackageUrlSet> src) {
+        if (BuildConfig.DEBUG) DLog.i("PackageUrlSet.copy: " + src);
         List<PackageUrlSet> dist = new ArrayList<>();
         for (PackageUrlSet pus : src) {
             dist.add(pus);

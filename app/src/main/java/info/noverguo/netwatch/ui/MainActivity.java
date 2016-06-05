@@ -1,10 +1,10 @@
 package info.noverguo.netwatch.ui;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -12,35 +12,36 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.tencent.noverguo.hooktest.BuildConfig;
 import com.tencent.noverguo.hooktest.R;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
 import info.noverguo.netwatch.adapter.BlackRecyclerViewAdapter;
 import info.noverguo.netwatch.adapter.MultiSelectRecyclerViewAdapter;
 import info.noverguo.netwatch.model.PackageUrl;
 import info.noverguo.netwatch.model.PackageUrlSet;
 import info.noverguo.netwatch.receiver.ReloadReceiver;
-import info.noverguo.netwatch.service.LocalUrlService;
+import info.noverguo.netwatch.tools.UrlsManager;
+import info.noverguo.netwatch.utils.BrowserUtils;
 import info.noverguo.netwatch.utils.DLog;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import butterknife.Bind;
-import butterknife.ButterKnife;
 import info.noverguo.netwatch.utils.UrlServiceUtils;
+import rx.functions.Action0;
+import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
     final static String TAG = MainActivity.class.getSimpleName();
-    LocalUrlService urlService;
     @Bind(R.id.rv_urls)
     RecyclerView mRecyclerView;
     @Bind(R.id.toolbar)
@@ -48,8 +49,7 @@ public class MainActivity extends AppCompatActivity {
     @Bind(R.id.fab)
     FloatingActionButton mFab;
     BlackRecyclerViewAdapter blackAdapter;
-    List<PackageUrlSet> packageBlackList = Collections.emptyList();
-    List<PackageUrlSet> packageUrlList = Collections.emptyList();
+    UrlsManager urlsManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,22 +59,54 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initView() {
-        DLog.i("initView start");
         ButterKnife.bind(this);
         setSupportActionBar(mToolbar);
-
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));//这里用线性显示 类似于listview
-        DLog.i("initView end");
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
     }
     int mSelectCount;
     private void initData() {
-        DLog.i("initData start");
-        urlService = new LocalUrlService(getApplicationContext());
-        blackAdapter = new BlackRecyclerViewAdapter(getApplicationContext());
+        urlsManager = UrlsManager.get(getApplicationContext());
+        blackAdapter = new BlackRecyclerViewAdapter(getApplicationContext(), new BlackRecyclerViewAdapter.ItemClickListener() {
+            @Override
+            public void onItemClick(PackageUrl item, List<PackageUrl> interceptItems) {
+                try {
+                    List<String> urls = new ArrayList<>();
+                    for (PackageUrl pu : interceptItems) {
+                        urls.add(pu.url);
+                    }
+                    new MaterialDialog.Builder(MainActivity.this)
+                            .title(item.url)
+                            .icon(getPackageManager().getApplicationIcon(item.packageName))
+                            .items(urls)
+                            .itemsCallback(new MaterialDialog.ListCallback() {
+                                @Override
+                                public void onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
+                                    try {
+                                        BrowserUtils.openBrowser(MainActivity.this, text.toString());
+                                    } catch (Exception e) {
+                                        Toast.makeText(getApplicationContext(), R.string.browser_not_found, Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            })
+                            .autoDismiss(false)
+                            .positiveText(R.string.ok)
+                            .onPositive(new MaterialDialog.SingleButtonCallback() {
+                                @Override
+                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                    dialog.dismiss();
+                                }
+                            })
+                            .show();
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
         blackAdapter.setSelectedListener(new MultiSelectRecyclerViewAdapter.SelectedListener() {
             @Override
             public void onSelect(int selectCount) {
-                Log.i(TAG, "onSelect: " + selectCount);
+                if (BuildConfig.DEBUG) DLog.i("onSelect: " + selectCount);
                 mSelectCount = selectCount;
                 invalidateOptionsMenu();
                 if (selectCount == 0) {
@@ -97,33 +129,30 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         mRecyclerView.setAdapter(blackAdapter);
-        reloadUrls();
-        resetAdapter();
+        notifyUrlsChange();
     }
     ReloadReceiver reloadBlackReceiver;
     ReloadReceiver reloadPackageReceiver;
+    boolean canChange = false;
     @Override
     protected void onResume() {
         super.onResume();
         reloadBlackReceiver = ReloadReceiver.registerReloadBlack(getApplicationContext(), new Runnable() {
             @Override
             public void run() {
-                if (blackAdapter.getSelectedItemCount() == 0) {
-                    resetAdapter();
-                    reloadBlack();
+                if (canChange || blackAdapter.getItemCount() == 0) {
+                    notifyUrlsChange();
                 }
             }
         });
-        reloadPackageReceiver = ReloadReceiver.registerReloadBlack(getApplicationContext(), new Runnable() {
+        reloadPackageReceiver = ReloadReceiver.registerReloadPackage(getApplicationContext(), new Runnable() {
             @Override
             public void run() {
-                if (blackAdapter.getSelectedItemCount() == 0) {
-                    resetAdapter();
-                    reloadPackage();
+                if (canChange || blackAdapter.getItemCount() == 0) {
+                    notifyUrlsChange();
                 }
             }
         });
-        reloadUrls();
     }
 
     @Override
@@ -139,34 +168,15 @@ public class MainActivity extends AppCompatActivity {
         notifyChange(blackAdapter);
     }
 
-    private void reloadUrls() {
-        reloadBlack();
-        reloadPackage();
-    }
-
-    private void reloadPackage() {
-        urlService.getAccessUrls(new LocalUrlService.GetUrlsCallback() {
-            @Override
-            public void onGet(List<PackageUrlSet> result) {
-                packageUrlList = PackageUrlSet.copy(result);
-                notifyUrlsChange();
-            }
-        });
-    }
-
-    private void reloadBlack() {
-        urlService.getBlackUrls(new LocalUrlService.GetUrlsCallback() {
-            @Override
-            public void onGet(List<PackageUrlSet> result) {
-                packageBlackList = PackageUrlSet.copy(result);
-                notifyUrlsChange();
-            }
-        });
-    }
 
     private void notifyUrlsChange() {
-        blackAdapter.setUrls(packageBlackList, packageUrlList);
-        notifyChange(blackAdapter);
+        canChange = false;
+        Schedulers.io().createWorker().schedule(new Action0() {
+            @Override
+            public void call() {
+                blackAdapter.setUrls(urlsManager.getBlackList(), urlsManager.getUrlList());
+            }
+        });
     }
 
     private void notifyChange(final RecyclerView.Adapter adapter) {
@@ -232,7 +242,9 @@ public class MainActivity extends AppCompatActivity {
                 .input(getString(R.string.dialog_add_input_hint), "", new MaterialDialog.InputCallback() {
                     @Override
                     public void onInput(MaterialDialog dialog, CharSequence input) {
-                        urlService.addBlackUrls(Arrays.asList(new PackageUrlSet(UrlServiceUtils.USER_ADD_PACKAGE, Arrays.asList(input.toString()))), null);
+                        canChange = true;
+                        urlsManager.addBlackUrls(Arrays.asList(new PackageUrlSet(UrlServiceUtils.USER_ADD_PACKAGE, Arrays.asList(input.toString()))));
+                        blackAdapter.clearSelectedState();
                     }
                 })
                 .negativeText(R.string.dialog_btn_cancel)
@@ -244,16 +256,17 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         final PackageUrl item = blackAdapter.getItem(blackAdapter.getSelectedItems().get(0));
-        // TODO 修改拦截规则
+        // 修改拦截规则
         new MaterialDialog.Builder(this)
-                .title(R.string.dialog_title_add)
+                .title(R.string.action_edit_black)
                 .inputType(InputType.TYPE_CLASS_TEXT)
                 .inputRange(1, 50, Color.RED)
                 .input(getString(R.string.dialog_add_input_hint), item.url, new MaterialDialog.InputCallback() {
                     @Override
                     public void onInput(MaterialDialog dialog, CharSequence input) {
-                        urlService.removeBlackUrls(Arrays.asList(new PackageUrlSet(item.packageName, Arrays.asList(item.url))), null);
-                        urlService.addBlackUrls(Arrays.asList(new PackageUrlSet(item.packageName, Arrays.asList(input.toString()))), null);
+                        canChange = true;
+                        urlsManager.replaceBlackUrl(item.packageName, item.url, input.toString());
+                        blackAdapter.clearSelectedState();
                     }
                 })
                 .negativeText(R.string.dialog_btn_cancel)
@@ -261,7 +274,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void removeBlackUrls() {
-        urlService.removeBlackUrls(blackAdapter.getSelectUrls(), null);
-        resetAdapter();
+        canChange = true;
+        urlsManager.removeBlackUrls(blackAdapter.getSelectUrls());
+        blackAdapter.clearSelectedState();
     }
 }

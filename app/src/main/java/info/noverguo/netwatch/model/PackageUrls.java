@@ -7,12 +7,8 @@ import java.util.List;
  */
 public class PackageUrls extends PackageUrl {
     public List<String> relativeUrls;
-    public boolean show = false;
     public PackageUrls(String packageName, List<String> relativeUrls) {
         super(packageName, packageName);
         this.relativeUrls = relativeUrls;
-    }
-    public int size() {
-        return show ? relativeUrls.size() : 0;
     }
 }

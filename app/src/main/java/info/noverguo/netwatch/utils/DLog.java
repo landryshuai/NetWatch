@@ -14,14 +14,23 @@ public class DLog {
     public static void setHead(String h) {
         head = h + ": ";
     }
-    public static void d(String info) {
+
+    public static void d(Object... info) {
         if (BuildConfig.DEBUG && d) {
-            Log.d(TAG, head + info);
+            Log.d(TAG, toString(info));
         }
     }
-    public static void i(String info) {
+    public static void i(Object... info) {
         if (BuildConfig.DEBUG) {
-            Log.i(TAG, head + info);
+            Log.i(TAG, toString(info));
         }
+    }
+
+    private static String toString(Object... info) {
+        StringBuilder builder = new StringBuilder(head);
+        for (Object i : info) {
+            builder.append(i).append(", ");
+        }
+        return builder.toString();
     }
 }

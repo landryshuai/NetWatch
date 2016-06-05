@@ -12,24 +12,21 @@ public class SparseArrayUtils {
     public static <E> void forEachSelectItem(LongSparseArray<E> items, ForEachCallback<Long, E> callback) {
         int size = items.size();
         for(int i=0;i<size;++i) {
-            long key = items.keyAt(i);
-            callback.onItem(key, items.get(key));
+            callback.onItem(items.keyAt(i), items.valueAt(i));
         }
     }
 
     public static <E> void forEachSelectItem(SparseBooleanArray items, ForEachCallback<Integer, Boolean> callback) {
         int size = items.size();
         for(int i=0;i<size;++i) {
-            int key = items.keyAt(i);
-            callback.onItem(key, items.get(key));
+            callback.onItem(items.keyAt(i), items.valueAt(i));
         }
     }
 
     public static <E> void forEachSelectItem(SparseArray<E> items, ForEachCallback<Integer, E> callback) {
         int size = items.size();
         for(int i=0;i<size;++i) {
-            int key = items.keyAt(i);
-            callback.onItem(key, items.get(key));
+            callback.onItem(items.keyAt(i), items.valueAt(i));
         }
     }
 

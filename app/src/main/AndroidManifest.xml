@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.tencent.noverguo.hooktest" >
-
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
+        android:name="info.noverguo.netwatch.App"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -35,11 +36,22 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="info.noverguo.netwatch.ui.MainActivity" />
         </activity>
+        <activity android:name="info.noverguo.netwatch.ui.WebActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
         <service android:name="info.noverguo.netwatch.service.RemoteUrlService" android:exported="true">
             <intent-filter>
                 <action android:name="info.noverguo.netwatch.service.IUrlService"></action>
             </intent-filter>
         </service>
+        <receiver android:name="info.noverguo.netwatch.receiver.PackageReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.PACKAGE_REMOVED" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

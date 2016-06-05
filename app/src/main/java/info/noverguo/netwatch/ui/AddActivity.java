@@ -1,7 +1,9 @@
 package info.noverguo.netwatch.ui;
 
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -10,33 +12,28 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
+import com.tencent.noverguo.hooktest.BuildConfig;
 import com.tencent.noverguo.hooktest.R;
-
-import info.noverguo.netwatch.adapter.MultiSelectRecyclerViewAdapter;
-import info.noverguo.netwatch.adapter.PackageRecyclerViewAdapter;
-import info.noverguo.netwatch.model.PackageUrl;
-import info.noverguo.netwatch.model.PackageUrlSet;
-import info.noverguo.netwatch.receiver.ReloadReceiver;
-import info.noverguo.netwatch.service.LocalUrlService;
-import info.noverguo.netwatch.utils.DLog;
-import info.noverguo.netwatch.utils.SizeUtils;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import info.noverguo.netwatch.adapter.MultiSelectRecyclerViewAdapter;
+import info.noverguo.netwatch.adapter.PackageRecyclerViewAdapter;
+import info.noverguo.netwatch.model.PackageHostMap;
+import info.noverguo.netwatch.receiver.ReloadReceiver;
+import info.noverguo.netwatch.tools.UrlsManager;
+import info.noverguo.netwatch.utils.BrowserUtils;
+import info.noverguo.netwatch.utils.DLog;
+import rx.functions.Action0;
+import rx.schedulers.Schedulers;
 
 public class AddActivity extends AppCompatActivity {
     final static String TAG = AddActivity.class.getSimpleName();
-    LocalUrlService urlService;
     @Bind(R.id.rv_urls)
     RecyclerView mRecyclerView;
     @Bind(R.id.toolbar)
@@ -44,8 +41,8 @@ public class AddActivity extends AppCompatActivity {
     @Bind(R.id.fab)
     FloatingActionButton mFab;
     PackageRecyclerViewAdapter packageAdapter;
-    List<PackageUrlSet> packageBlackList = Collections.emptyList();
-    List<PackageUrlSet> packageUrlList = Collections.emptyList();
+    UrlsManager urlsManager;
+    int mSelectCount;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,28 +52,56 @@ public class AddActivity extends AppCompatActivity {
     }
 
     private void initView() {
-        DLog.i("initView start");
+        if (BuildConfig.DEBUG) DLog.i("initView start");
         ButterKnife.bind(this);
         setSupportActionBar(mToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));//这里用线性显示 类似于listview
-        DLog.i("initView end");
+        if (BuildConfig.DEBUG) DLog.i("initView end");
     }
 
     private void initData() {
-        DLog.i("initData start");
-        urlService = new LocalUrlService(getApplicationContext());
-        packageAdapter = new PackageRecyclerViewAdapter(getApplicationContext(), new PackageRecyclerViewAdapter.Callback() {
+        if (BuildConfig.DEBUG) DLog.i("initData start");
+        urlsManager = UrlsManager.get(getApplicationContext());
+        packageAdapter = new PackageRecyclerViewAdapter(getApplicationContext(), new PackageRecyclerViewAdapter.ItemClickListener() {
             @Override
-            public void onItemClick(PackageUrl item) {
-                Toast.makeText(getApplicationContext(), item.url, Toast.LENGTH_LONG).show();
+            public void onItemClick(PackageHostMap item) {
+                try {
+                    new MaterialDialog.Builder(AddActivity.this)
+                            .title(item.url)
+                            .icon(getPackageManager().getApplicationIcon(item.packageName))
+                            .items(item.relativePackageUrls)
+                            .itemsCallback(new MaterialDialog.ListCallback() {
+                                @Override
+                                public void onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
+                                    try {
+                                        BrowserUtils.openBrowser(AddActivity.this, text.toString());
+                                    } catch (Exception e) {
+                                        Toast.makeText(getApplicationContext(), R.string.browser_not_found, Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            })
+                            .autoDismiss(false)
+                            .positiveText(R.string.ok)
+                            .onPositive(new MaterialDialog.SingleButtonCallback() {
+                                @Override
+                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                    dialog.dismiss();
+                                }
+                            })
+                            .show();
+                } catch (PackageManager.NameNotFoundException e) {
+                    e.printStackTrace();
+                }
             }
         });
         packageAdapter.setSelectedListener(new MultiSelectRecyclerViewAdapter.SelectedListener() {
             @Override
             public void onSelect(int selectCount) {
-                Log.i(TAG, "onSelect: " + selectCount);
+                if (BuildConfig.DEBUG) Log.i(TAG, "onSelect: " + selectCount);
+                mSelectCount = selectCount;
+                invalidateOptionsMenu();
                 if (selectCount == 0) {
                     mFab.setVisibility(View.INVISIBLE);
                     mToolbar.setTitle(R.string.title_add_name);
@@ -98,33 +123,30 @@ public class AddActivity extends AppCompatActivity {
             }
         });
         mRecyclerView.setAdapter(packageAdapter);
-        reloadUrls();
-        resetAdapter();
+        notifyUrlsChange();
     }
     ReloadReceiver reloadBlackReceiver;
     ReloadReceiver reloadPackageReceiver;
+    boolean canChange = false;
     @Override
     protected void onResume() {
         super.onResume();
         reloadBlackReceiver = ReloadReceiver.registerReloadBlack(getApplicationContext(), new Runnable() {
             @Override
             public void run() {
-                if (packageAdapter.getSelectedItemCount() == 0) {
-                    resetAdapter();
-                    reloadBlack();
+                if (canChange || packageAdapter.getItemCount() == 0) {
+                    notifyUrlsChange();
                 }
             }
         });
-        reloadPackageReceiver = ReloadReceiver.registerReloadBlack(getApplicationContext(), new Runnable() {
+        reloadPackageReceiver = ReloadReceiver.registerReloadPackage(getApplicationContext(), new Runnable() {
             @Override
             public void run() {
-                if (packageAdapter.getSelectedItemCount() == 0) {
-                    resetAdapter();
-                    reloadPackage();
+                if (canChange || packageAdapter.getItemCount() == 0) {
+                    notifyUrlsChange();
                 }
             }
         });
-        reloadUrls();
     }
 
     @Override
@@ -135,7 +157,8 @@ public class AddActivity extends AppCompatActivity {
     }
 
     private void addBlackUrls() {
-        urlService.addBlackUrls(packageAdapter.getSelectUrls(), null);
+        canChange = true;
+        urlsManager.addBlackUrls(packageAdapter.getSelectUrls());
         resetAdapter();
     }
 
@@ -144,34 +167,14 @@ public class AddActivity extends AppCompatActivity {
         notifyChange(packageAdapter);
     }
 
-    private void reloadUrls() {
-        reloadBlack();
-        reloadPackage();
-    }
-
-    private void reloadPackage() {
-        urlService.getAccessUrls(new LocalUrlService.GetUrlsCallback() {
-            @Override
-            public void onGet(List<PackageUrlSet> result) {
-                packageUrlList = PackageUrlSet.copy(result);
-                notifyUrlsChange();
-            }
-        });
-    }
-
-    private void reloadBlack() {
-        urlService.getBlackUrls(new LocalUrlService.GetUrlsCallback() {
-            @Override
-            public void onGet(List<PackageUrlSet> result) {
-                packageBlackList = PackageUrlSet.copy(result);
-                notifyUrlsChange();
-            }
-        });
-    }
-
     private void notifyUrlsChange() {
-        packageAdapter.setUrls(packageBlackList, packageUrlList);
-        notifyChange(packageAdapter);
+        canChange = false;
+        Schedulers.io().createWorker().schedule(new Action0() {
+            @Override
+            public void call() {
+                packageAdapter.setUrls(urlsManager.getUrlList());
+            }
+        });
     }
 
     private void notifyChange(final RecyclerView.Adapter adapter) {
@@ -184,8 +187,19 @@ public class AddActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onBackPressed() {
+        if (!cancelSelected()) {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_add, menu);
+        if (mSelectCount == 0) {
+            getMenuInflater().inflate(R.menu.menu_add, menu);
+        } else {
+            getMenuInflater().inflate(R.menu.menu_add_select, menu);
+        }
         return true;
     }
 
@@ -194,8 +208,18 @@ public class AddActivity extends AppCompatActivity {
         int id = item.getItemId();
         if (id == R.id.action_settings) {
             return true;
+        } else if (id == R.id.action_cancel_select) {
+            cancelSelected();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private boolean cancelSelected() {
+        if (packageAdapter.getSelectedItemCount() > 0) {
+            resetAdapter();
+            return true;
+        }
+        return false;
     }
 }

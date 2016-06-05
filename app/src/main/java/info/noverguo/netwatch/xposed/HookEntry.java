@@ -6,8 +6,11 @@ import android.content.Context;
 import android.os.Build;
 import android.webkit.WebView;
 
+import com.tencent.noverguo.hooktest.BuildConfig;
+
 import info.noverguo.netwatch.utils.DLog;
-import info.noverguo.netwatch.utils.UrlChecker;
+import info.noverguo.netwatch.utils.NetworkUtils;
+import info.noverguo.netwatch.xposed.utils.UrlChecker;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -32,13 +35,13 @@ public class HookEntry implements IXposedHookLoadPackage {
 //        if(!lp.isFirstApplication) {
 //            return;
 //        }
-        DLog.i("handleLoadPackage: " + lp.packageName);
+        if (BuildConfig.DEBUG) DLog.i("handleLoadPackage: " + lp.packageName);
         // 不注入自己
-        if("com.tencent.noverguo.hooktest".equals(lp.packageName) || count > 0) {
+        if("info.noverguo.netwatch".equals(lp.packageName) || count > 0) {
             return;
         }
         if (lp.appInfo == null) {
-            DLog.d("appinfo is null");
+            if (BuildConfig.DEBUG) DLog.d("appinfo is null");
             return;
         }
         final String packageName = lp.packageName;
@@ -54,7 +57,7 @@ public class HookEntry implements IXposedHookLoadPackage {
                 applicationClass = Application.class.getName();
             }
         }
-        DLog.d("app class: " + applicationClass + ", " + count++);
+        if (BuildConfig.DEBUG) DLog.d("app class: " + applicationClass + ", " + count++);
         XposedHelpers.findAndHookMethod(applicationClass, lp.classLoader, "onCreate", new MethodHook() {
             @Override
             public void afterHooked(MethodHookParam param) throws Throwable {
@@ -63,43 +66,66 @@ public class HookEntry implements IXposedHookLoadPackage {
             }
         });
     }
-
+    // 1秒内同一线程的hook不作拦截处理
+    //
+    final int TIMEOUT = 1000;
+    ThreadLocal<Long> threadLocals = new ThreadLocal<>();
+    private boolean isCheck() {
+        Long val = threadLocals.get();
+        if (val == null || val == -1) {
+            return false;
+        }
+        return System.currentTimeMillis() - val < TIMEOUT;
+    }
+    private void setIsCheck(boolean isCheck) {
+        if (isCheck) {
+            threadLocals.set(System.currentTimeMillis());
+        } else {
+            threadLocals.set(-1L);
+        }
+    }
     private void hookNetwork(final String packageName) {
-        DLog.d("hook: " + packageName);
+        if (BuildConfig.DEBUG) DLog.d("hook: " + packageName);
         XposedHelpers.findAndHookMethod(URL.class, "openConnection", new MethodHook() {
             @Override
             public void beforeHooked(MethodHookParam param) throws Throwable {
                 URL url = (URL)param.thisObject;
-                if (urlChecker.isNetworkUri(url.getProtocol()) && !urlChecker.validateSync(url.toString(), url.getHost(), url.getPath())) {
-                    DLog.i("----URI.openConnection(): intercept: " + url);
+                boolean res = urlChecker.isNetworkUri(url.getProtocol()) && urlChecker.checkIsInterceptSync(url.toString(), url.getHost(), url.getPath());
+                if (res) {
                     param.setResult(null);
-                } else {
-                    DLog.i("----URI.openConnection(): pass: " + url);
                 }
+                if (BuildConfig.DEBUG) DLog.i("----URL.openConnection(): " + (res ? "intercept" : "pass") + ": " + url);
+                setIsCheck(!res);
             }
         });
 
         XposedHelpers.findAndHookMethod(URI.class, "parseURI", String.class, boolean.class, new MethodHook() {
             @Override
             public void beforeHooked(MethodHookParam param) throws Throwable {
-                if (!urlChecker.validateUri((String)param.args[0])) {
-                    DLog.i("----URI.parseURI(): intercept: " + param.args[0]);
-                    param.args[0] = "";
-                } else {
-                    DLog.i("----URI.parseURI(): pass: " + param.args[0]);
+                String url = (String)param.args[0];
+                boolean res = urlChecker.checkIsInterceptUri(url);
+                if (res) {
+                    param.args[0] = "http://127.0.0.9";
                 }
+                if (BuildConfig.DEBUG) DLog.i("----URI.parseURI(): " + (res ? "intercept" : "pass") + ": " + url);
+                setIsCheck(!res);
             }
         });
 
         XposedHelpers.findAndHookMethod(InetAddress.class, "getAllByNameImpl", String.class, int.class, new MethodHook() {
             @Override
             public void beforeHooked(MethodHookParam param) throws Throwable {
-                if (!urlChecker.validateSocket((String)param.args[0])) {
-                    DLog.i("----InetAddress.getAllByNameImpl(): intercept: " + param.args[0]);
-                    param.args[0] = null;
-                } else {
-                    DLog.i("----InetAddress.getAllByNameImpl(): pass: " + param.args[0]);
+                String url = (String)param.args[0];
+                if (BuildConfig.DEBUG) DLog.i("----InetAddress.getAllByNameImpl().isCheck(): " + url + ", " + NetworkUtils.isIp(url) + ", " + isCheck());
+                if (isCheck()) {
+                    return;
                 }
+                boolean res = urlChecker.checkIsInterceptSocket(url);
+                if (res) {
+                    param.args[0] = null;
+                }
+                if (BuildConfig.DEBUG) DLog.i("----InetAddress.getAllByNameImpl(): " + (res ? "intercept" : "pass") + ": " + url);
+                setIsCheck(!res);
             }
         });
 
@@ -107,29 +133,33 @@ public class HookEntry implements IXposedHookLoadPackage {
             @TargetApi(Build.VERSION_CODES.KITKAT)
             @Override
             public void beforeHooked(MethodHookParam param) throws Throwable {
-                boolean result = false;
+                if (BuildConfig.DEBUG) DLog.i("----Socket.onConnect().isCheck(): " + param.args[0] + ", " + isCheck());
+                if (isCheck()) {
+                    return;
+                }
+                boolean res = false;
                 if(param.args[0] instanceof InetSocketAddress) {
                     InetSocketAddress isa = (InetSocketAddress) param.args[0];
-                    result = urlChecker.validateSocket(isa.getHostName(), isa.getAddress().getHostAddress(), isa.getPort());
+                    res = urlChecker.checkIsInterceptSocket(isa.getHostName(), isa.getAddress().getHostAddress(), isa.getPort());
                 }
-                if (!result) {
-                    DLog.i("----Socket.onConnect(): intercept: " + param.args[0]);
+                if (res) {
                     param.args[0] = null;
-                } else {
-                    DLog.i("----Socket.onConnect(): pass: " + param.args[0]);
                 }
+                if (BuildConfig.DEBUG) DLog.i("----Socket.Socket(): " + (res ? "intercept" : "pass") + ": " + param.args[0]);
+                setIsCheck(!res);
             }
         });
 
         XposedHelpers.findAndHookMethod(WebView.class, "loadUrl", String.class, Map.class, new MethodHook() {
             @Override
             public void beforeHooked(MethodHookParam param) throws Throwable {
-                if (!urlChecker.validateUri((String)param.args[0])) {
-                    DLog.i("----WebView.loadUrl(): intercept: " + param.args[0]);
+                if (BuildConfig.DEBUG) DLog.i("----WebView.loadUrl().isCheck(): " + param.args[0] + ", " + isCheck());
+                boolean res = urlChecker.checkIsInterceptUri((String)param.args[0]);
+                if (res) {
                     param.args[0] = "";
-                } else {
-                    DLog.i("----WebView.loadUrl(): pass: " + param.args[0]);
                 }
+                if (BuildConfig.DEBUG) DLog.i("----WebView.loadUrl(): " + (res ? "intercept" : "pass") + ": " + param.args[0]);
+                setIsCheck(!res);
             }
         });
     }

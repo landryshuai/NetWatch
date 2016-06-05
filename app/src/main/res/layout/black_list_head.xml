@@ -17,9 +17,9 @@
             android:layout_alignParentLeft="true"
             android:id="@+id/iv_icon"
             android:layout_gravity="center"
-            android:layout_width="45dp"
-            android:layout_height="45dp"
-            android:src="@drawable/ic_edit"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:src="@drawable/ic_language_24dp"
             android:background="@android:color/transparent"
             />
         <TextView
@@ -31,25 +31,27 @@
             android:marqueeRepeatLimit="marquee_forever"
             android:focusable="true"
             android:padding="18dp"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:layout_gravity="center"
             android:gravity="left"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:textColor="@android:color/black"
             android:text="@null"
             android:background="@android:color/transparent"/>
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:orientation="horizontal"
-            android:gravity="right">
+            android:gravity="right"
+            android:visibility="gone">
             <TextView
                 android:layout_alignParentTop="true"
                 android:layout_alignParentRight="true"
                 android:id="@+id/tv_count"
                 android:layout_marginRight="20dp"
-                android:textSize="13sp"
+                android:textSize="12sp"
                 android:layout_gravity="center"
                 android:gravity="center"
                 android:layout_width="wrap_content"

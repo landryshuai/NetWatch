@@ -1,5 +1,7 @@
 package info.noverguo.netwatch.adapter;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v7.widget.RecyclerView;
 import android.util.SparseBooleanArray;
 import android.view.View;
@@ -15,7 +17,7 @@ import java.util.List;
  */
 public abstract class MultiSelectRecyclerViewAdapter<T extends MultiSelectRecyclerViewAdapter.MultiSelectViewHolder> extends RecyclerView.Adapter<T> {
 
-    private SparseBooleanArray selectedItems;
+    SparseBooleanArray selectedItems;
     private ClickListener clickListener;
     private SelectedListener selectedListener;
 
@@ -98,7 +100,12 @@ public abstract class MultiSelectRecyclerViewAdapter<T extends MultiSelectRecycl
             }
         });
         if (selectedListener != null) {
-            selectedListener.onSelect(0);
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    selectedListener.onSelect(0);
+                }
+            });
         }
     }
 

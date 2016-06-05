@@ -7,7 +7,11 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.RemoteException;
 
+import com.tencent.noverguo.hooktest.BuildConfig;
+
+import info.noverguo.netwatch.model.HostPathsMap;
 import info.noverguo.netwatch.model.PackageUrlSet;
+import info.noverguo.netwatch.model.UrlRule;
 import info.noverguo.netwatch.utils.DLog;
 import info.noverguo.netwatch.utils.UrlServiceUtils;
 
@@ -29,25 +33,37 @@ public class LocalUrlService {
     private String packageName;
     public LocalUrlService(Context context) {
         this.context = context.getApplicationContext();
-        packageName = context.getPackageName();
+        this.packageName = context.getPackageName();
     }
     private IUrlService urlRemoteService;
     private ServiceConnection mRemoteConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
-            DLog.d("LocalUrlService.onServiceConnected");
-            urlRemoteService = IUrlService.Stub.asInterface(service);
+            if (BuildConfig.DEBUG) DLog.i("LocalUrlService.onServiceConnected");
+            synchronized (LocalUrlService.this) {
+                urlRemoteService = IUrlService.Stub.asInterface(service);
+            }
             runIfNeed();
         }
 
         public void onServiceDisconnected(ComponentName className) {
-            DLog.d("LocalUrlService.onServiceDisconnected");
-            urlRemoteService = null;
+            if (BuildConfig.DEBUG) DLog.i("LocalUrlService.onServiceDisconnected");
+            synchronized (LocalUrlService.this) {
+                urlRemoteService = null;
+                init = false;
+            }
         }
     };
 
-    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    ExecutorService executorService;
     LinkedList<Runnable> tasks = new LinkedList<>();
+    boolean init = false;
     private boolean init() {
+        synchronized (this) {
+            if (init) {
+                return true;
+            }
+            init = true;
+        }
         if (urlRemoteService == null) {
             Intent intent = new Intent(IUrlService.class.getName());
             // 5.0后需要显式指定包名
@@ -61,70 +77,53 @@ public class LocalUrlService {
         }
         return true;
     }
-//    public void check(final PackageUrlSet unknownList, final CheckCallback callback) {
-//        DLog.d("LocalUrlService.check");
-//        init();
-//        unknownList.packageName = packageName;
-//        tasks.add(new Runnable() {
-//            @Override
-//            public void run() {
-//                try {
-//                    DLog.d("LocalUrlService.urlRemoteService.check: " + unknownList.relativeUrls);
-//                    callback.onCheck(unknownList, urlRemoteService.check(unknownList));
-//                } catch (RemoteException e) {
-//                    callback.onError(e);
-//                }
-//                runIfNeed();
-//            }
-//        });
-//        runIfNeed();
-//    }
 
-    public Set<String> checkHost(final String url, final String host, final String path) {
-        DLog.d("LocalUrlService.checkHost: " + url + ", " + host + ", " + path);
-        if (!init()) {
-            return null;
-        }
-        final AtomicReference<List<String>> result = new AtomicReference<>();
-        final AtomicBoolean isRun = new AtomicBoolean(false);
-        tasks.addFirst(new Runnable() {
-            @Override
-            public void run() {
+    public boolean checkIsInterceptUrl(final String url, final String host, final String path) {
+        if (BuildConfig.DEBUG) DLog.i("LocalUrlService.checkIsInterceptUrl: " + url + ", " + host + ", " + path);
+        if (urlRemoteService != null) {
+            IUrlService urlService;
+            synchronized (this) {
+                urlService = urlRemoteService;
+            }
+            if (urlService != null) {
                 try {
-                    result.set(urlRemoteService.checkHost(packageName, url, host, path));
+                    if (BuildConfig.DEBUG) DLog.i("LocalUrlService.checkIsInterceptUrl.sync");
+                    return urlService.checkIsInterceptUrl(packageName, url, host, path);
                 } catch (RemoteException e) {
-                    e.printStackTrace();
+                    if (BuildConfig.DEBUG) {
+                        e.printStackTrace();
+                    }
+                    return false;
                 }
-                synchronized (host) {
-                    host.notify();
-                }
-                isRun.set(true);
-                runIfNeed();
-            }
-        });
-        runIfNeed();
-        while(!isRun.get()) {
-            try {
-                synchronized (host) {
-                    host.wait();
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
-        List<String> blackUrls = result.get();
-        DLog.d("LocalUrlService.checkHost result: " + blackUrls);
-        if (blackUrls == null || UrlServiceUtils.isNull(blackUrls)) {
-            return null;
-        }
-        if (blackUrls.isEmpty()) {
-            return Collections.emptySet();
-        }
-        return new HashSet<>(blackUrls);
+        init();
+        return false;
     }
 
-    public void getAccessUrls(final GetUrlsCallback callback) {
-        DLog.d("LocalUrlService.getUrls");
+    public void queryRules(final QueryRulesCallback callback) {
+        if (BuildConfig.DEBUG) DLog.i("LocalUrlService.getUrls");
+        if (callback == null) {
+            return;
+        }
+        if (urlRemoteService != null) {
+            IUrlService urlService;
+            synchronized (this) {
+                urlService = urlRemoteService;
+            }
+            if (urlService != null) {
+                try {
+                    if (BuildConfig.DEBUG) DLog.i("LocalUrlService.queryRules.sync");
+                    callback.onRules(urlService.queryRules(packageName));
+                } catch (RemoteException e) {
+                    if (BuildConfig.DEBUG) {
+                        e.printStackTrace();
+                    }
+                    callback.onError(e);
+                }
+                return;
+            }
+        }
         if (!init()) {
             return;
         }
@@ -132,23 +131,41 @@ public class LocalUrlService {
             @Override
             public void run() {
                 try {
-                    DLog.d("LocalUrlService.urlRemoteService.getAccessUrls");
-                    if (callback != null) {
-                        callback.onGet(urlRemoteService.getAccessUrls());
-                    }
+                    if (BuildConfig.DEBUG) DLog.i("LocalUrlService.queryRules.task");
+                    callback.onRules(urlRemoteService.queryRules(packageName));
                 } catch (RemoteException e) {
-                    if (callback != null) {
-                        callback.onError(e);
-                    }
+                    callback.onError(e);
                 }
-                runIfNeed();
             }
         });
         runIfNeed();
     }
 
-    public void getBlackUrls(final GetUrlsCallback callback) {
-        DLog.d("LocalUrlService.getUrls");
+    public void checkUpdate(final String md5, final CheckUpdateCallback callback) {
+        if (BuildConfig.DEBUG) DLog.i("LocalUrlService.checkUpdate");
+        if (callback == null) {
+            return;
+        }
+        if (urlRemoteService != null) {
+            IUrlService urlService;
+            synchronized (this) {
+                urlService = urlRemoteService;
+            }
+            if (urlService != null) {
+                try {
+                    if (BuildConfig.DEBUG) DLog.i("LocalUrlService.checkUpdate.sync");
+                    if (urlService.checkUpdate(packageName, md5)) {
+                        callback.onUpdate();
+                    }
+                } catch (RemoteException e) {
+                    if (BuildConfig.DEBUG) {
+                        e.printStackTrace();
+                    }
+                    callback.onError(e);
+                }
+                return;
+            }
+        }
         if (!init()) {
             return;
         }
@@ -156,80 +173,44 @@ public class LocalUrlService {
             @Override
             public void run() {
                 try {
-                    DLog.d("LocalUrlService.urlRemoteService.getBlackUrls");
-                    if (callback != null) {
-                        callback.onGet(urlRemoteService.getBlackUrls());
+                    if (BuildConfig.DEBUG) DLog.i("LocalUrlService.checkUpdate.task");
+                    if (urlRemoteService.checkUpdate(packageName, md5)) {
+                        callback.onUpdate();
                     }
                 } catch (RemoteException e) {
-                    if (callback != null) {
-                        callback.onError(e);
-                    }
+                    callback.onError(e);
                 }
-                runIfNeed();
-            }
-        });
-        runIfNeed();
-    }
-
-    public void addBlackUrls(final List<PackageUrlSet> blackUrls, final ErrorCallback callback) {
-        DLog.d("LocalUrlService.addBlackUrls: " + blackUrls);
-        if (!init()) {
-            return;
-        }
-        tasks.add(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    DLog.d("LocalUrlService.urlRemoteService.addBlackUrls");
-                    urlRemoteService.addBlackUrls(blackUrls);
-                } catch (RemoteException e) {
-                    if (callback != null) {
-                        callback.onError(e);
-                    }
-                }
-                runIfNeed();
-            }
-        });
-        runIfNeed();
-    }
-
-    public void removeBlackUrls(final List<PackageUrlSet> blackUrls, final ErrorCallback callback) {
-        DLog.d("LocalUrlService.removeBlackUrls: " + blackUrls);
-        if (!init()) {
-            return;
-        }
-        tasks.add(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    DLog.d("LocalUrlService.urlRemoteService.addBlackUrls");
-                    urlRemoteService.removeBlackUrls(blackUrls);
-                } catch (RemoteException e) {
-                    if (callback != null) {
-                        callback.onError(e);
-                    }
-                }
-                runIfNeed();
             }
         });
         runIfNeed();
     }
 
     private void runIfNeed() {
-        DLog.d("LocalUrlService.runIfNeed: " + urlRemoteService + ", " + tasks);
+        if (BuildConfig.DEBUG) DLog.i("LocalUrlService.runIfNeed: " + urlRemoteService + ", " + tasks);
         if (urlRemoteService == null || tasks.isEmpty()) {
             return;
         }
-        executorService.execute(tasks.removeFirst());
-    }
-
-    public interface ErrorCallback {
-        void onError(RemoteException e);
-    }
-
-    public static abstract class GetUrlsCallback implements ErrorCallback {
-        public abstract void onGet(List<PackageUrlSet> result);
-        public void onError(RemoteException e) {
+        if (executorService == null) {
+            executorService = Executors.newSingleThreadExecutor();
         }
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                tasks.removeFirst().run();
+                runIfNeed();
+            }
+        });
+    }
+
+    public static class ErrorCallback {
+        void onError(RemoteException e) {}
+    }
+
+    public static abstract class QueryRulesCallback extends ErrorCallback {
+        public abstract void onRules(UrlRule urlRule);
+    }
+
+    public static abstract class CheckUpdateCallback extends ErrorCallback {
+        public abstract void onUpdate();
     }
 }
