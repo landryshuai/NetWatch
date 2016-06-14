@@ -11,7 +11,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-import com.tencent.noverguo.hooktest.R;
+import info.noverguo.netwatch.R;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;

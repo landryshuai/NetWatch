@@ -4,11 +4,13 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
 
-import com.tencent.noverguo.hooktest.BuildConfig;
+import info.noverguo.netwatch.BuildConfig;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import info.noverguo.netwatch.PrefSetting;
 import info.noverguo.netwatch.model.HostPath;
@@ -21,9 +23,7 @@ import info.noverguo.netwatch.service.LocalUrlService;
 import info.noverguo.netwatch.utils.DLog;
 import info.noverguo.netwatch.utils.RxJavaUtils;
 import info.noverguo.netwatch.utils.UrlServiceUtils;
-import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
-import rx.schedulers.Schedulers;
 
 /**
  * Created by noverguo on 2016/5/28.
@@ -31,6 +31,7 @@ import rx.schedulers.Schedulers;
 
 public class UrlsManager {
     LocalUrlService urlService;
+    Set<String> checkPackages = new HashSet<>();
     Map<String, PackageUrlSet> packageBlackUrls = new HashMap<>();
     Map<String, PackageUrlSet> packageUrls = new HashMap<>();
     Map<String, String> md5Map = new HashMap<>();
@@ -63,7 +64,20 @@ public class UrlsManager {
     }
 
     public void load() {
+        initUncheckPackages();
         initMd5();
+    }
+
+    private void initUncheckPackages() {
+        RxJavaUtils.io2io(setting.getUncheckPackage()).subscribe(new Action1<Set<String>>() {
+            @Override
+            public void call(Set<String> res) {
+                synchronized (md5Map) {
+                    checkPackages.clear();
+                    checkPackages.addAll(res);
+                }
+            }
+        });
     }
 
     private void initMd5() {
@@ -178,6 +192,24 @@ public class UrlsManager {
         }
     }
 
+    public void removeBlack(String packageName) {
+        synchronized (packageBlackUrls) {
+            if (packageBlackUrls.containsKey(packageName)) {
+                packageBlackUrls.remove(packageName);
+                ReloadReceiver.sendReloadBlack(context);
+            }
+        }
+    }
+
+    public void removePackageUrl(String packageName, String url) {
+        synchronized (packageUrls) {
+            if (packageUrls.containsKey(packageName)) {
+                packageUrls.get(packageName).relativeUrls.remove(url);
+                ReloadReceiver.sendReloadPackage(context);
+            }
+        }
+    }
+
     public boolean checkIsIntercept(String packageName, String host, String path) {
         boolean res = false;
         UrlsMatcher urlsMatcher = null;
@@ -214,13 +246,13 @@ public class UrlsManager {
 
     public List<PackageUrlSet> getBlackList() {
         synchronized (packageBlackUrls) {
-            return PackageUrlSet.copy(packageBlackUrls.values());
+            return PackageUrlSet.copy(packageBlackUrls.values(), checkPackages);
         }
     }
 
     public List<PackageUrlSet> getUrlList() {
         synchronized (packageUrls) {
-            return PackageUrlSet.copy(packageUrls.values());
+            return PackageUrlSet.copy(packageUrls.values(), checkPackages);
         }
     }
 
@@ -296,5 +328,21 @@ public class UrlsManager {
         UrlRule urlRule = new UrlRule(blackMap, whiteMap);
         updateMd5(packageName, urlRule.md5);
         return urlRule;
+    }
+
+    public void addCheckPackage(String packageName) {
+        checkPackages.add(packageName);
+        ReloadReceiver.sendReloadNeedCheck(context, packageName);
+        setting.putCheckPackage(checkPackages);
+    }
+
+    public void removeCheckPackage(String packageName) {
+        checkPackages.remove(packageName);
+        ReloadReceiver.sendReloadNeedCheck(context, packageName);
+        setting.putCheckPackage(checkPackages);
+    }
+
+    public boolean needCheck(String packageName) {
+        return checkPackages.contains(packageName);
     }
 }

@@ -1,8 +1,10 @@
 <resources>
     <string name="app_name">网络守护</string>
     <string name="title_add_name">应用网络排查</string>
+    <string name="app_intercept_filter">应用拦截筛选</string>
     <string name="global_intercept_rule">全局拦截规则</string>
     <string name="action_settings">设置</string>
+    <string name="action_fliter">筛选</string>
     <string name="action_add">增加</string>
     <string name="action_edit">修改</string>
     <string name="action_del">删除</string>
@@ -10,6 +12,7 @@
     <string name="action_add_black">增加拦截规则</string>
     <string name="action_edit_black">修改拦截规则</string>
     <string name="action_del_black">删除拦截规则</string>
+    <string name="action_del_pkg">删除拦截规则</string>
     <string name="dialog_title_add">增加拦截规则</string>
     <string name="dialog_btn_add">增加</string>
     <string name="dialog_btn_edit">修改</string>

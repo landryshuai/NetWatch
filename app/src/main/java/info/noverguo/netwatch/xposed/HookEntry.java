@@ -6,7 +6,7 @@ import android.content.Context;
 import android.os.Build;
 import android.webkit.WebView;
 
-import com.tencent.noverguo.hooktest.BuildConfig;
+import info.noverguo.netwatch.BuildConfig;
 
 import info.noverguo.netwatch.utils.DLog;
 import info.noverguo.netwatch.utils.NetworkUtils;
@@ -86,7 +86,7 @@ public class HookEntry implements IXposedHookLoadPackage {
     }
     private void hookNetwork(final String packageName) {
         if (BuildConfig.DEBUG) DLog.d("hook: " + packageName);
-        XposedHelpers.findAndHookMethod(URL.class, "openConnection", new MethodHook() {
+        XposedHelpers.findAndHookMethod(URL.class, "openConnection", new UrlCheckMethodHook(urlChecker) {
             @Override
             public void beforeHooked(MethodHookParam param) throws Throwable {
                 URL url = (URL)param.thisObject;
@@ -99,7 +99,7 @@ public class HookEntry implements IXposedHookLoadPackage {
             }
         });
 
-        XposedHelpers.findAndHookMethod(URI.class, "parseURI", String.class, boolean.class, new MethodHook() {
+        XposedHelpers.findAndHookMethod(URI.class, "parseURI", String.class, boolean.class, new UrlCheckMethodHook(urlChecker) {
             @Override
             public void beforeHooked(MethodHookParam param) throws Throwable {
                 String url = (String)param.args[0];
@@ -112,7 +112,7 @@ public class HookEntry implements IXposedHookLoadPackage {
             }
         });
 
-        XposedHelpers.findAndHookMethod(InetAddress.class, "getAllByNameImpl", String.class, int.class, new MethodHook() {
+        XposedHelpers.findAndHookMethod(InetAddress.class, "getAllByNameImpl", String.class, int.class, new UrlCheckMethodHook(urlChecker) {
             @Override
             public void beforeHooked(MethodHookParam param) throws Throwable {
                 String url = (String)param.args[0];
@@ -129,7 +129,7 @@ public class HookEntry implements IXposedHookLoadPackage {
             }
         });
 
-        XposedHelpers.findAndHookMethod(Socket.class, "connect", SocketAddress.class, int.class, new MethodHook() {
+        XposedHelpers.findAndHookMethod(Socket.class, "connect", SocketAddress.class, int.class, new UrlCheckMethodHook(urlChecker) {
             @TargetApi(Build.VERSION_CODES.KITKAT)
             @Override
             public void beforeHooked(MethodHookParam param) throws Throwable {
@@ -150,7 +150,7 @@ public class HookEntry implements IXposedHookLoadPackage {
             }
         });
 
-        XposedHelpers.findAndHookMethod(WebView.class, "loadUrl", String.class, Map.class, new MethodHook() {
+        XposedHelpers.findAndHookMethod(WebView.class, "loadUrl", String.class, Map.class, new UrlCheckMethodHook(urlChecker) {
             @Override
             public void beforeHooked(MethodHookParam param) throws Throwable {
                 if (BuildConfig.DEBUG) DLog.i("----WebView.loadUrl().isCheck(): " + param.args[0] + ", " + isCheck());

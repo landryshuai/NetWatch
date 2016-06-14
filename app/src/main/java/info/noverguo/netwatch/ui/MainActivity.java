@@ -19,8 +19,8 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.tencent.noverguo.hooktest.BuildConfig;
-import com.tencent.noverguo.hooktest.R;
+import info.noverguo.netwatch.BuildConfig;
+import info.noverguo.netwatch.R;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -220,6 +220,8 @@ public class MainActivity extends AppCompatActivity {
             removeBlackUrls();
         } else if (id == R.id.action_cancel_select) {
             cancelSelected();
+        } else if (id == R.id.action_filter) {
+            startActivity(new Intent(this, FilterActivity.class));
         } else {
             return super.onOptionsItemSelected(item);
         }

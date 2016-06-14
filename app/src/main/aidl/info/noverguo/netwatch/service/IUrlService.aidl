@@ -15,6 +15,7 @@ interface IUrlService {
     boolean checkIsInterceptUrl(in String packageName, in String url, in String host, in String path);
     UrlRule queryRules(in String packageName);
     boolean checkUpdate(in String packageName, in String md5);
+    boolean needCheck(in String packageName);
 //    List<PackageUrlSet> getAccessUrls();
 //    List<PackageUrlSet> getBlackUrls();
 //    void addBlackUrls(in List<PackageUrlSet> blackUrls);

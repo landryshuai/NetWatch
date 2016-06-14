@@ -2,7 +2,7 @@ package info.noverguo.netwatch.utils;
 
 import android.util.Log;
 
-import com.tencent.noverguo.hooktest.BuildConfig;
+import info.noverguo.netwatch.BuildConfig;
 
 /**
  * Created by noverguo on 2016/5/10.

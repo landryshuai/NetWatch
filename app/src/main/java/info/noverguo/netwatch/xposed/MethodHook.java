@@ -6,7 +6,7 @@ public class MethodHook extends XC_MethodHook {
 	public static boolean inHook = false;
 
 	@Override
-	final public void beforeHookedMethod(MethodHookParam param) throws Throwable {
+	public void beforeHookedMethod(MethodHookParam param) throws Throwable {
 		if (inHook) {
 			return;
 		}
@@ -20,7 +20,7 @@ public class MethodHook extends XC_MethodHook {
 	}
 
 	@Override
-	final public void afterHookedMethod(MethodHookParam param) throws Throwable {
+	public void afterHookedMethod(MethodHookParam param) throws Throwable {
 		if (inHook) {
 			return;
 		}
@@ -34,7 +34,7 @@ public class MethodHook extends XC_MethodHook {
 	}
 
 	@Override
-	final public void call(Param param) throws Throwable {
+	public void call(Param param) throws Throwable {
 		if (inHook) {
 			return;
 		}

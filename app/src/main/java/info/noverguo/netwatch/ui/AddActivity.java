@@ -17,14 +17,17 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.tencent.noverguo.hooktest.BuildConfig;
-import com.tencent.noverguo.hooktest.R;
+import info.noverguo.netwatch.BuildConfig;
+import info.noverguo.netwatch.R;
+
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import info.noverguo.netwatch.adapter.MultiSelectRecyclerViewAdapter;
 import info.noverguo.netwatch.adapter.PackageRecyclerViewAdapter;
 import info.noverguo.netwatch.model.PackageHostMap;
+import info.noverguo.netwatch.model.PackageUrlSet;
 import info.noverguo.netwatch.receiver.ReloadReceiver;
 import info.noverguo.netwatch.tools.UrlsManager;
 import info.noverguo.netwatch.utils.BrowserUtils;
@@ -206,13 +209,25 @@ public class AddActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        } else if (id == R.id.action_cancel_select) {
+        if (id == R.id.action_cancel_select) {
             cancelSelected();
+        } else if (id == R.id.action_del_pkg) {
+            deletePackageUrls();
         }
-
         return super.onOptionsItemSelected(item);
+    }
+
+    private void deletePackageUrls() {
+        List<PackageUrlSet> selectUrls = packageAdapter.getSelectUrls();
+        if (selectUrls.isEmpty()) {
+            return;
+        }
+        canChange = true;
+        for (PackageUrlSet selectUrl : selectUrls) {
+            for (String url : selectUrl.relativeUrls) {
+                urlsManager.removePackageUrl(selectUrl.packageName, url);
+            }
+        }
     }
 
     private boolean cancelSelected() {

@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import com.tencent.noverguo.hooktest.BuildConfig;
+import info.noverguo.netwatch.BuildConfig;
 
 import info.noverguo.netwatch.tools.UrlsManager;
 import info.noverguo.netwatch.utils.DLog;

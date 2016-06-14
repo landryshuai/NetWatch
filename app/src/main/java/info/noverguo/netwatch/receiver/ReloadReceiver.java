@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 
-import com.tencent.noverguo.hooktest.BuildConfig;
+import info.noverguo.netwatch.BuildConfig;
 
 import info.noverguo.netwatch.utils.DLog;
 
@@ -15,6 +15,7 @@ import info.noverguo.netwatch.utils.DLog;
 public class ReloadReceiver extends BroadcastReceiver {
     private static final String ACTION_RELOAD_BLACK = "info.noverguo.netwatch.service.RemoteUrlService.ACTION_RELOAD_BLACK";
     private static final String ACTION_RELOAD_PACKAGE = "info.noverguo.netwatch.service.RemoteUrlService.ACTION_RELOAD_PACKAGE";
+    private static final String ACTION_RELOAD_NEED_CHECK = "info.noverguo.netwatch.service.RemoteUrlService.ACTION_RELOAD_NEED_CHECK";
     Runnable callback;
     ReloadReceiver(Runnable callback) {
         this.callback = callback;
@@ -39,6 +40,12 @@ public class ReloadReceiver extends BroadcastReceiver {
         return receiver;
     }
 
+    public static ReloadReceiver registerReloadNeedCheck(Context context, Runnable callback) {
+        ReloadReceiver receiver = new ReloadReceiver(callback);
+        context.registerReceiver(receiver, new IntentFilter(ACTION_RELOAD_NEED_CHECK + context.getPackageName()));
+        return receiver;
+    }
+
     public void unregister(Context context) {
         context.unregisterReceiver(this);
     }
@@ -54,6 +61,10 @@ public class ReloadReceiver extends BroadcastReceiver {
 
     public static void sendReloadPackage(Context context) {
         context.sendBroadcast(new Intent(ACTION_RELOAD_PACKAGE + context.getPackageName()));
+    }
+
+    public static void sendReloadNeedCheck(Context context, String packageName) {
+        context.sendBroadcast(new Intent(ACTION_RELOAD_NEED_CHECK + packageName));
     }
 
 }

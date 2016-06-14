@@ -14,9 +14,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.tencent.noverguo.hooktest.BuildConfig;
-import com.tencent.noverguo.hooktest.R;
-
+import info.noverguo.netwatch.BuildConfig;
+import info.noverguo.netwatch.R;
 import info.noverguo.netwatch.model.PackageUrl;
 import info.noverguo.netwatch.model.PackageUrlSet;
 import info.noverguo.netwatch.tools.UrlsManager;
@@ -315,7 +314,7 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
     Handler uiHandler;
     final int MSG_REMOVE_PACKAGE = 1;
     private void removePackageUrls(String packageName) {
-        urlsManager.removePackage(packageName);
+        urlsManager.removeBlack(packageName);
         if (needRemovePackage == null) {
             needRemovePackage = new HashSet<>(1);
         }

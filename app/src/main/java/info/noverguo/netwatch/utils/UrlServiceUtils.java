@@ -2,7 +2,7 @@ package info.noverguo.netwatch.utils;
 
 import android.util.Log;
 
-import com.tencent.noverguo.hooktest.BuildConfig;
+import info.noverguo.netwatch.BuildConfig;
 
 import info.noverguo.netwatch.model.HostPath;
 import info.noverguo.netwatch.model.HostPathPattern;

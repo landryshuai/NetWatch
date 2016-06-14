@@ -6,7 +6,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
 
-import com.tencent.noverguo.hooktest.BuildConfig;
+import info.noverguo.netwatch.BuildConfig;
 
 import info.noverguo.netwatch.model.UrlRule;
 import info.noverguo.netwatch.tools.UrlsManager;
@@ -53,6 +53,11 @@ public class RemoteUrlService extends Service {
                 boolean needUpdate = urlsManager.chechUpdate(packageName, md5);
                 if (BuildConfig.DEBUG) DLog.i("onBind.checkUpdate: " + packageName, md5, needUpdate);
                 return needUpdate;
+            }
+
+            @Override
+            public boolean needCheck(String packageName) throws RemoteException {
+                return urlsManager.needCheck(packageName);
             }
         };
     }

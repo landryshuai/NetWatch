@@ -3,7 +3,7 @@ package info.noverguo.netwatch.xposed.utils;
 import android.content.Context;
 import android.text.TextUtils;
 
-import com.tencent.noverguo.hooktest.BuildConfig;
+import info.noverguo.netwatch.BuildConfig;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -26,6 +26,7 @@ import rx.functions.Action1;
  * Created by noverguo on 2016/5/9.
  */
 public class UrlChecker {
+    boolean needCheck = false;
     Set<String> fixWhiteHosts = new HashSet<>();
     HostPathsMap whiteList = new HostPathsMap();
     HostPathsMap blackList = new HostPathsMap();
@@ -42,6 +43,12 @@ public class UrlChecker {
             @Override
             public void run() {
                 reloadRule();
+            }
+        });
+        ReloadReceiver.registerReloadNeedCheck(context, new Runnable() {
+            @Override
+            public void run() {
+                checkNeedCheck();
             }
         });
         load();
@@ -63,12 +70,29 @@ public class UrlChecker {
                 synchronized (md5Lock) {
                     md5 = m;
                 }
-                urlService.checkUpdate(md5, new LocalUrlService.CheckUpdateCallback() {
-                    @Override
-                    public void onUpdate() {
-                        reloadRule();
-                    }
-                });
+                checkNeedCheck();
+            }
+        });
+    }
+
+    private void checkNeedCheck() {
+        urlService.needCheck(new LocalUrlService.NeedCheckCallback() {
+            @Override
+            public void onResult(boolean res) {
+                needCheck = res;
+                checkUpdate();
+            }
+        });
+    }
+
+    private void checkUpdate() {
+        if (!needCheck) {
+            return;
+        }
+        urlService.checkUpdate(md5, new LocalUrlService.CheckUpdateCallback() {
+            @Override
+            public void onUpdate() {
+                reloadRule();
             }
         });
     }
@@ -120,6 +144,10 @@ public class UrlChecker {
 
     private void initFixWhiteList() {
         fixWhiteHosts.add("127.0.0.9");
+    }
+
+    public boolean needCheck() {
+        return needCheck;
     }
 
     public boolean isNetworkUri(String uri) {

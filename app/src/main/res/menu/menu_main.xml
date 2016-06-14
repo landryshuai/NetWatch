@@ -11,8 +11,12 @@
           android:title="@string/action_add_black"
           android:orderInCategory="101"
           app:showAsAction="never" />
+    <item android:id="@+id/action_filter"
+        android:title="@string/action_fliter"
+        android:orderInCategory="106"
+        app:showAsAction="never" />
     <item android:id="@+id/action_settings"
         android:title="@string/action_settings"
-        android:orderInCategory="102"
+        android:orderInCategory="108"
         app:showAsAction="never" />
 </menu>

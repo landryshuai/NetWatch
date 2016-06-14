@@ -2,6 +2,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="info.noverguo.netwatch.ui.AddActivity" >
+    <item android:id="@+id/action_del_pkg"
+        android:title="@string/action_del_pkg"
+        android:orderInCategory="99"
+        android:icon="@drawable/ic_clear_white_24dp"
+        app:showAsAction="always" />
     <item android:id="@+id/action_cancel_select"
           android:title="@string/action_cancel_select"
           android:orderInCategory="100"
