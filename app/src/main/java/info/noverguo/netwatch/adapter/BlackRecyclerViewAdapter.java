@@ -106,21 +106,23 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
         final SparseArray<PackageUrlSet> _headItemIndexes = new SparseArray<>();
         final SparseArray<List<PackageUrl>> _interceptItemIndexes = new SparseArray<>();
         final SparseBooleanArray _headShowMap = new SparseBooleanArray();
+        final SparseArray<PackageUrl> _contentItemIndexes = new SparseArray<>();
         int _count = 0;
         for (PackageUrlSet pus : packageBlackList) {
             String packageName = pus.packageName;
-            _headShowMap.put(_count, true);
+            // 默认不展开
+            _headShowMap.put(_count, false);
             _headItemIndexes.put(_count++, pus);
             if (UrlServiceUtils.isUserAddPackage(packageName)) {
                 List<PackageUrlSet> urlList = urlsManager.getUrlList();
                 for (String url : pus.relativeUrls) {
-                    contentItemIndexes.put(_count, new PackageUrl(packageName, url));
+                    _contentItemIndexes.put(_count, new PackageUrl(packageName, url));
                     _interceptItemIndexes.put(_count++, UrlServiceUtils.getMatchPackageUrls(url, urlList));
                 }
             } else {
                 PackageUrlSet packageUrlSet = urlsManager.getPackageUrl(packageName);
                 for (String url : pus.relativeUrls) {
-                    contentItemIndexes.put(_count, new PackageUrl(packageName, url));
+                    _contentItemIndexes.put(_count, new PackageUrl(packageName, url));
                     _interceptItemIndexes.put(_count++, UrlServiceUtils.getMatchPackageUrls(url, packageUrlSet));
                 }
             }
@@ -133,6 +135,7 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
                     headItemIndexes = _headItemIndexes;
                     headShowMap = _headShowMap;
                     interceptItemIndexes = _interceptItemIndexes;
+                    contentItemIndexes = _contentItemIndexes;
                     allCount = tmpCount;
                     showCount = allCount;
                     resetShowFlags();

@@ -218,16 +218,11 @@ public class AddActivity extends AppCompatActivity {
     }
 
     private void deletePackageUrls() {
-        List<PackageUrlSet> selectUrls = packageAdapter.getSelectUrls();
-        if (selectUrls.isEmpty()) {
+        if (mSelectCount == 0) {
             return;
         }
         canChange = true;
-        for (PackageUrlSet selectUrl : selectUrls) {
-            for (String url : selectUrl.relativeUrls) {
-                urlsManager.removePackageUrl(selectUrl.packageName, url);
-            }
-        }
+        packageAdapter.removeSelectedUrls();
     }
 
     private boolean cancelSelected() {

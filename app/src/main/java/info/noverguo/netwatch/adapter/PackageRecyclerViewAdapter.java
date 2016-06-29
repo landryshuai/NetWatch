@@ -116,6 +116,7 @@ public class PackageRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<P
             if (!map.isEmpty()) {
                 PackageUrlSet packageUrlSet = new PackageUrlSet(packageName);
                 _interceptItems.put(_count, new PackageUrlSet(packageName, interceptUrls));
+                // 默认不展开
                 _headShowMap.put(_count, false);
                 _headItemIndexes.put(_count++, packageUrlSet);
                 for (PackageHostMap hostMap : map.values()) {
@@ -207,6 +208,21 @@ public class PackageRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<P
             PackageUrlSet.put(selectUrls, pu.packageName, pu.url);
         }
         return new ArrayList<>(selectUrls.values());
+    }
+
+    public void removeSelectedUrls() {
+        List<Integer> selectedItems = getSelectedItems();
+        for(Integer index : selectedItems) {
+            PackageUrl item = getItem(index, false);
+            if (item instanceof PackageHostMap) {
+                PackageHostMap contentItem = (PackageHostMap) item;
+                for (String url : contentItem.relativePackageUrls) {
+                    urlsManager.removePackageUrl(contentItem.packageName, url);
+                }
+            } else {
+                urlsManager.removePackageUrl(item.packageName, item.url);
+            }
+        }
     }
 
     @Override

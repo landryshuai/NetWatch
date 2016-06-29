@@ -207,11 +207,14 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    private static final int REQ_ADD = 1;
+    private static final int REQ_FILTER = 2;
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_add) {
-            startActivity(new Intent(this, AddActivity.class));
+            startActivityForResult(new Intent(this, AddActivity.class), REQ_ADD);
         } else if (id == R.id.action_add_black) {
             addBlackUrl();
         } else if (id == R.id.action_edit_black) {
@@ -221,11 +224,17 @@ public class MainActivity extends AppCompatActivity {
         } else if (id == R.id.action_cancel_select) {
             cancelSelected();
         } else if (id == R.id.action_filter) {
-            startActivity(new Intent(this, FilterActivity.class));
+            startActivityForResult(new Intent(this, FilterActivity.class), REQ_FILTER);
         } else {
             return super.onOptionsItemSelected(item);
         }
         return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        canChange = true;
     }
 
     private boolean cancelSelected() {

@@ -1,9 +1,8 @@
 package info.noverguo.netwatch.xposed.utils;
 
 import android.content.Context;
+import android.net.Uri;
 import android.text.TextUtils;
-
-import info.noverguo.netwatch.BuildConfig;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -13,20 +12,20 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import info.noverguo.netwatch.BuildConfig;
 import info.noverguo.netwatch.model.HostPathsMap;
 import info.noverguo.netwatch.model.UrlRule;
 import info.noverguo.netwatch.receiver.ReloadReceiver;
 import info.noverguo.netwatch.service.LocalUrlService;
 import info.noverguo.netwatch.utils.DLog;
-import info.noverguo.netwatch.utils.RxJavaUtils;
 import info.noverguo.netwatch.xposed.HSetting;
-import rx.functions.Action1;
 
 /**
  * Created by noverguo on 2016/5/9.
  */
 public class UrlChecker {
-    boolean needCheck = false;
+    boolean needCheck = true;
+    boolean hookIp = true;
     Set<String> fixWhiteHosts = new HashSet<>();
     HostPathsMap whiteList = new HostPathsMap();
     HostPathsMap blackList = new HostPathsMap();
@@ -151,15 +150,12 @@ public class UrlChecker {
     }
 
     public boolean isNetworkUri(String uri) {
-        return uri.startsWith("http") || uri.startsWith("ftp");
+        return uri.startsWith("http") || uri.startsWith("ftp") || uri.startsWith("gmsg");
     }
     public boolean checkIsInterceptUri(String uri) {
-        try {
-            if (isNetworkUri(uri)) {
-                URL url = new URL(uri);
-                return checkIsInterceptSync(uri, url.getHost(), url.getPath());
-            }
-        } catch (MalformedURLException e) {
+        if (isNetworkUri(uri)) {
+            Uri url = Uri.parse(uri);
+            return checkIsInterceptSync(uri, url.getHost(), url.getPath());
         }
         return false;
     }
@@ -241,5 +237,9 @@ public class UrlChecker {
             return checkIsInterceptSocket(val + ":" + port);
         }
         return checkIsInterceptSocket(val);
+    }
+
+    public boolean isHookIp() {
+        return hookIp;
     }
 }
