@@ -67,7 +67,7 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
                 switchSelectedState(position);
             } else {
                 if (itemClickListener != null) {
-                    itemClickListener.onItemClick(getItem(position), interceptItemIndexes.get(position));
+                    itemClickListener.onItemClick(getItem(position), interceptItemIndexes.get(fixPos(position)));
                 }
             }
         }
@@ -282,7 +282,7 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
         if (isHead(position)) {
             onBindHead((HeadViewHolder) holder, item, isSelected);
         } else {
-            onBindContent((ContentViewHolder) holder, item, interceptItemIndexes.get(position), isSelected);
+            onBindContent((ContentViewHolder) holder, item, interceptItemIndexes.get(fixPos(position)), isSelected);
         }
     }
 
