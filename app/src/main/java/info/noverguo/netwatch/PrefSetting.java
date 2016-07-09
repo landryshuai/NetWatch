@@ -25,6 +25,7 @@ public class PrefSetting {
     private final static String KEY_PACKAGE_URL = "kpu";
     private final static String KEY_MD5_MAP = "kmm";
     private final static String KEY_UNCHECK_PACKAGE = "kup";
+    private final static String KEY_CLICK_HIDE_PACKAGE = "kup";
     private Context context;
     public PrefSetting(Context context) {
         this.context = context;
@@ -61,8 +62,16 @@ public class PrefSetting {
         putSet(KEY_UNCHECK_PACKAGE, uncheckPackage);
     }
 
-    public Observable<Set<String>> getUncheckPackage() {
+    public Observable<Set<String>> getCheckPackage() {
         return getStringSet(KEY_UNCHECK_PACKAGE);
+    }
+
+    public void putClickHidePackage(Set<String> uncheckPackage) {
+        putSet(KEY_CLICK_HIDE_PACKAGE, uncheckPackage);
+    }
+
+    public Observable<Set<String>> getClickHidePackage() {
+        return getStringSet(KEY_CLICK_HIDE_PACKAGE);
     }
 
 

@@ -2,7 +2,9 @@
     <string name="app_name">网络守护</string>
     <string name="title_add_name">应用网络排查</string>
     <string name="app_intercept_filter">应用拦截筛选</string>
+    <string name="app_click_hide">应用点击隐藏视图</string>
     <string name="global_intercept_rule">全局拦截规则</string>
+    <string name="action_click_hide">点击隐藏</string>
     <string name="action_settings">设置</string>
     <string name="action_fliter">筛选</string>
     <string name="action_add">增加</string>

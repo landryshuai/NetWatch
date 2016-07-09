@@ -4,8 +4,6 @@ import android.content.Context;
 import android.net.Uri;
 import android.text.TextUtils;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Set;
@@ -16,7 +14,7 @@ import info.noverguo.netwatch.BuildConfig;
 import info.noverguo.netwatch.model.HostPathsMap;
 import info.noverguo.netwatch.model.UrlRule;
 import info.noverguo.netwatch.receiver.ReloadReceiver;
-import info.noverguo.netwatch.service.LocalUrlService;
+import info.noverguo.netwatch.service.LocalService;
 import info.noverguo.netwatch.utils.DLog;
 import info.noverguo.netwatch.xposed.HSetting;
 
@@ -31,11 +29,11 @@ public class UrlChecker {
     HostPathsMap blackList = new HostPathsMap();
     Object md5Lock = new Object();
     String md5 = "";
-    LocalUrlService urlService;
+    LocalService urlService;
     HSetting setting;
     ExecutorService executorService = Executors.newSingleThreadExecutor();;
-    public UrlChecker(Context context) {
-        urlService = new LocalUrlService(context);
+    public UrlChecker(Context context, LocalService localService) {
+        urlService = localService;
         setting = new HSetting(context);
         initFixWhiteList();
         ReloadReceiver.registerReloadBlack(context, new Runnable() {
@@ -75,7 +73,7 @@ public class UrlChecker {
     }
 
     private void checkNeedCheck() {
-        urlService.needCheck(new LocalUrlService.NeedCheckCallback() {
+        urlService.needCheck(new LocalService.BooleanResultCallback() {
             @Override
             public void onResult(boolean res) {
                 needCheck = res;
@@ -88,7 +86,7 @@ public class UrlChecker {
         if (!needCheck) {
             return;
         }
-        urlService.checkUpdate(md5, new LocalUrlService.CheckUpdateCallback() {
+        urlService.checkUpdate(md5, new LocalService.CheckUpdateCallback() {
             @Override
             public void onUpdate() {
                 reloadRule();
@@ -100,7 +98,7 @@ public class UrlChecker {
         executorService.execute(new Runnable() {
             @Override
             public void run() {
-                urlService.queryRules(new LocalUrlService.QueryRulesCallback() {
+                urlService.queryRules(new LocalService.QueryRulesCallback() {
                     @Override
                     public void onRules(UrlRule urlRule) {
                         if (BuildConfig.DEBUG) DLog.i("queryRules.black: " + urlRule.blackMap);

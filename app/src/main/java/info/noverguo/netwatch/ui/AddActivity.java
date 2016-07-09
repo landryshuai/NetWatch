@@ -20,16 +20,13 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import info.noverguo.netwatch.BuildConfig;
 import info.noverguo.netwatch.R;
 
-import java.util.List;
-
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import info.noverguo.netwatch.adapter.MultiSelectRecyclerViewAdapter;
 import info.noverguo.netwatch.adapter.PackageRecyclerViewAdapter;
 import info.noverguo.netwatch.model.PackageHostMap;
-import info.noverguo.netwatch.model.PackageUrlSet;
 import info.noverguo.netwatch.receiver.ReloadReceiver;
-import info.noverguo.netwatch.tools.UrlsManager;
+import info.noverguo.netwatch.tools.AppDataManager;
 import info.noverguo.netwatch.utils.BrowserUtils;
 import info.noverguo.netwatch.utils.DLog;
 import rx.functions.Action0;
@@ -44,7 +41,7 @@ public class AddActivity extends AppCompatActivity {
     @Bind(R.id.fab)
     FloatingActionButton mFab;
     PackageRecyclerViewAdapter packageAdapter;
-    UrlsManager urlsManager;
+    AppDataManager appDataManager;
     int mSelectCount;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,7 +63,7 @@ public class AddActivity extends AppCompatActivity {
 
     private void initData() {
         if (BuildConfig.DEBUG) DLog.i("initData start");
-        urlsManager = UrlsManager.get(getApplicationContext());
+        appDataManager = AppDataManager.get(getApplicationContext());
         packageAdapter = new PackageRecyclerViewAdapter(getApplicationContext(), new PackageRecyclerViewAdapter.ItemClickListener() {
             @Override
             public void onItemClick(PackageHostMap item) {
@@ -161,7 +158,7 @@ public class AddActivity extends AppCompatActivity {
 
     private void addBlackUrls() {
         canChange = true;
-        urlsManager.addBlackUrls(packageAdapter.getSelectUrls());
+        appDataManager.addBlackUrls(packageAdapter.getSelectUrls());
         resetAdapter();
     }
 
@@ -175,7 +172,7 @@ public class AddActivity extends AppCompatActivity {
         Schedulers.io().createWorker().schedule(new Action0() {
             @Override
             public void call() {
-                packageAdapter.setUrls(urlsManager.getUrlList());
+                packageAdapter.setUrls(appDataManager.getUrlList());
             }
         });
     }

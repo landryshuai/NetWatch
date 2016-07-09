@@ -9,45 +9,36 @@ import android.os.RemoteException;
 
 import info.noverguo.netwatch.BuildConfig;
 
-import info.noverguo.netwatch.model.HostPathsMap;
-import info.noverguo.netwatch.model.PackageUrlSet;
 import info.noverguo.netwatch.model.UrlRule;
 import info.noverguo.netwatch.utils.DLog;
-import info.noverguo.netwatch.utils.UrlServiceUtils;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Created by noverguo on 2016/5/10.
  */
-public class LocalUrlService {
+public class LocalService {
     private Context context;
     private String packageName;
-    public LocalUrlService(Context context) {
+    public LocalService(Context context) {
         this.context = context.getApplicationContext();
         this.packageName = context.getPackageName();
     }
     private IUrlService urlRemoteService;
     private ServiceConnection mRemoteConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
-            if (BuildConfig.DEBUG) DLog.i("LocalUrlService.onServiceConnected");
-            synchronized (LocalUrlService.this) {
+            if (BuildConfig.DEBUG) DLog.i("LocalService.onServiceConnected");
+            synchronized (LocalService.this) {
                 urlRemoteService = IUrlService.Stub.asInterface(service);
             }
             runIfNeed();
         }
 
         public void onServiceDisconnected(ComponentName className) {
-            if (BuildConfig.DEBUG) DLog.i("LocalUrlService.onServiceDisconnected");
-            synchronized (LocalUrlService.this) {
+            if (BuildConfig.DEBUG) DLog.i("LocalService.onServiceDisconnected");
+            synchronized (LocalService.this) {
                 urlRemoteService = null;
                 init = false;
             }
@@ -79,7 +70,7 @@ public class LocalUrlService {
     }
 
     public boolean checkIsInterceptUrl(final String url, final String host, final String path) {
-        if (BuildConfig.DEBUG) DLog.i("LocalUrlService.checkIsInterceptUrl: " + url + ", " + host + ", " + path);
+        if (BuildConfig.DEBUG) DLog.i("LocalService.checkIsInterceptUrl: " + url + ", " + host + ", " + path);
         if (urlRemoteService != null) {
             IUrlService urlService;
             synchronized (this) {
@@ -87,7 +78,7 @@ public class LocalUrlService {
             }
             if (urlService != null) {
                 try {
-                    if (BuildConfig.DEBUG) DLog.i("LocalUrlService.checkIsInterceptUrl.sync");
+                    if (BuildConfig.DEBUG) DLog.i("LocalService.checkIsInterceptUrl.sync");
                     return urlService.checkIsInterceptUrl(packageName, url, host, path);
                 } catch (RemoteException e) {
                     if (BuildConfig.DEBUG) {
@@ -102,7 +93,7 @@ public class LocalUrlService {
     }
 
     public void queryRules(final QueryRulesCallback callback) {
-        if (BuildConfig.DEBUG) DLog.i("LocalUrlService.getUrls");
+        if (BuildConfig.DEBUG) DLog.i("LocalService.getUrls");
         if (callback == null) {
             return;
         }
@@ -113,7 +104,7 @@ public class LocalUrlService {
             }
             if (urlService != null) {
                 try {
-                    if (BuildConfig.DEBUG) DLog.i("LocalUrlService.queryRules.sync");
+                    if (BuildConfig.DEBUG) DLog.i("LocalService.queryRules.sync");
                     callback.onRules(urlService.queryRules(packageName));
                 } catch (RemoteException e) {
                     if (BuildConfig.DEBUG) {
@@ -132,7 +123,7 @@ public class LocalUrlService {
                 @Override
                 public void run() {
                     try {
-                        if (BuildConfig.DEBUG) DLog.i("LocalUrlService.queryRules.task");
+                        if (BuildConfig.DEBUG) DLog.i("LocalService.queryRules.task");
                         callback.onRules(urlRemoteService.queryRules(packageName));
                     } catch (RemoteException e) {
                         callback.onError(e);
@@ -144,7 +135,7 @@ public class LocalUrlService {
     }
 
     public void checkUpdate(final String md5, final CheckUpdateCallback callback) {
-        if (BuildConfig.DEBUG) DLog.i("LocalUrlService.checkUpdate");
+        if (BuildConfig.DEBUG) DLog.i("LocalService.checkUpdate");
         if (callback == null) {
             return;
         }
@@ -155,7 +146,7 @@ public class LocalUrlService {
             }
             if (urlService != null) {
                 try {
-                    if (BuildConfig.DEBUG) DLog.i("LocalUrlService.checkUpdate.sync");
+                    if (BuildConfig.DEBUG) DLog.i("LocalService.checkUpdate.sync");
                     if (urlService.checkUpdate(packageName, md5)) {
                         callback.onUpdate();
                     }
@@ -176,7 +167,7 @@ public class LocalUrlService {
                 @Override
                 public void run() {
                     try {
-                        if (BuildConfig.DEBUG) DLog.i("LocalUrlService.checkUpdate.task");
+                        if (BuildConfig.DEBUG) DLog.i("LocalService.checkUpdate.task");
                         if (urlRemoteService.checkUpdate(packageName, md5)) {
                             callback.onUpdate();
                         }
@@ -189,8 +180,8 @@ public class LocalUrlService {
         runIfNeed();
     }
 
-    public void needCheck(final NeedCheckCallback callback) {
-        if (BuildConfig.DEBUG) DLog.i("LocalUrlService.needCheck");
+    public void needCheck(final BooleanResultCallback callback) {
+        if (BuildConfig.DEBUG) DLog.i("LocalService.needCheck");
         if (callback == null) {
             return;
         }
@@ -201,7 +192,7 @@ public class LocalUrlService {
             }
             if (urlService != null) {
                 try {
-                    if (BuildConfig.DEBUG) DLog.i("LocalUrlService.needCheck.sync");
+                    if (BuildConfig.DEBUG) DLog.i("LocalService.needCheck.sync");
                     callback.onResult(urlService.needCheck(packageName));
                 } catch (RemoteException e) {
                     if (BuildConfig.DEBUG) {
@@ -220,7 +211,7 @@ public class LocalUrlService {
                 @Override
                 public void run() {
                     try {
-                        if (BuildConfig.DEBUG) DLog.i("LocalUrlService.needCheck.task");
+                        if (BuildConfig.DEBUG) DLog.i("LocalService.needCheck.task");
                         callback.onResult(urlRemoteService.needCheck(packageName));
                     } catch (RemoteException e) {
                         callback.onError(e);
@@ -231,8 +222,50 @@ public class LocalUrlService {
         runIfNeed();
     }
 
+    public void checkClickHide(final BooleanResultCallback callback) {
+        if (BuildConfig.DEBUG) DLog.i("LocalService.checkClickHide");
+        if (callback == null) {
+            return;
+        }
+        if (urlRemoteService != null) {
+            IUrlService urlService;
+            synchronized (this) {
+                urlService = urlRemoteService;
+            }
+            if (urlService != null) {
+                try {
+                    if (BuildConfig.DEBUG) DLog.i("LocalService.checkClickHide.sync");
+                    callback.onResult(urlService.checkClickHide(packageName));
+                } catch (RemoteException e) {
+                    if (BuildConfig.DEBUG) {
+                        e.printStackTrace();
+                    }
+                    callback.onError(e);
+                }
+                return;
+            }
+        }
+        if (!init()) {
+            return;
+        }
+        synchronized (tasks) {
+            tasks.add(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (BuildConfig.DEBUG) DLog.i("LocalService.checkClickHide.task");
+                        callback.onResult(urlRemoteService.checkClickHide(packageName));
+                    } catch (RemoteException e) {
+                        callback.onError(e);
+                    }
+                }
+            });
+        }
+        runIfNeed();
+    }
+
     private void runIfNeed() {
-        if (BuildConfig.DEBUG) DLog.i("LocalUrlService.runIfNeed: " + urlRemoteService + ", " + tasks);
+        if (BuildConfig.DEBUG) DLog.i("LocalService.runIfNeed: " + urlRemoteService + ", " + tasks);
         if (urlRemoteService == null) {
             return;
         }
@@ -271,7 +304,7 @@ public class LocalUrlService {
     public static abstract class CheckUpdateCallback extends ErrorCallback {
         public abstract void onUpdate();
     }
-    public static abstract class NeedCheckCallback extends ErrorCallback {
-        public abstract void onResult(boolean needCheck);
+    public static abstract class BooleanResultCallback extends ErrorCallback {
+        public abstract void onResult(boolean res);
     }
 }

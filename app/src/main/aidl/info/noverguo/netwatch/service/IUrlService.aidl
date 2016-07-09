@@ -16,6 +16,7 @@ interface IUrlService {
     UrlRule queryRules(in String packageName);
     boolean checkUpdate(in String packageName, in String md5);
     boolean needCheck(in String packageName);
+    boolean checkClickHide(in String packageName);
 //    List<PackageUrlSet> getAccessUrls();
 //    List<PackageUrlSet> getBlackUrls();
 //    void addBlackUrls(in List<PackageUrlSet> blackUrls);

@@ -32,7 +32,7 @@ import info.noverguo.netwatch.model.PackageHostMap;
 import info.noverguo.netwatch.model.PackageUrl;
 import info.noverguo.netwatch.model.PackageUrlSet;
 import info.noverguo.netwatch.model.PackageUrls;
-import info.noverguo.netwatch.tools.UrlsManager;
+import info.noverguo.netwatch.tools.AppDataManager;
 import info.noverguo.netwatch.utils.DLog;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action0;
@@ -55,7 +55,7 @@ public class PackageRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<P
     private int[] itemIndexMap;
     private SparseBooleanArray headShowMap = new SparseBooleanArray();
     private ItemClickListener itemClickListener;
-    private UrlsManager urlsManager;
+    private AppDataManager appDataManager;
     private ClickListener listener = new ClickListener() {
         @Override
         public void onItemClicked(int position) {
@@ -83,7 +83,7 @@ public class PackageRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<P
         mContext = context;
         mLayoutInflater = LayoutInflater.from(context);
         mPackageManager = mContext.getPackageManager();
-        urlsManager = UrlsManager.get(context);
+        appDataManager = AppDataManager.get(context);
         this.itemClickListener = itemClickListener;
         setClickListener(listener);
     }
@@ -102,7 +102,7 @@ public class PackageRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<P
             List<String> interceptUrls = new ArrayList<>();
             for (String url : pus.relativeUrls) {
                 HostPath hostPath = HostPath.create(url);
-                if (urlsManager.checkIsIntercept(packageName, hostPath.host, hostPath.path)) {
+                if (appDataManager.checkIsIntercept(packageName, hostPath.host, hostPath.path)) {
                     interceptUrls.add(url);
                 } else {
                     String host = hostPath.host;
@@ -217,10 +217,10 @@ public class PackageRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<P
             if (item instanceof PackageHostMap) {
                 PackageHostMap contentItem = (PackageHostMap) item;
                 for (String url : contentItem.relativePackageUrls) {
-                    urlsManager.removePackageUrl(contentItem.packageName, url);
+                    appDataManager.removePackageUrl(contentItem.packageName, url);
                 }
             } else {
-                urlsManager.removePackageUrl(item.packageName, item.url);
+                appDataManager.removePackageUrl(item.packageName, item.url);
             }
         }
     }
@@ -329,7 +329,7 @@ public class PackageRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<P
     Handler uiHandler;
     final int MSG_REMOVE_PACKAGE = 1;
     private void removePackageUrls(String packageName) {
-        urlsManager.removePackage(packageName);
+        appDataManager.removePackage(packageName);
         if (needRemovePackage == null) {
             needRemovePackage = new HashSet<>(1);
         }

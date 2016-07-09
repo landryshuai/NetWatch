@@ -15,6 +15,10 @@
         android:title="@string/action_fliter"
         android:orderInCategory="106"
         app:showAsAction="never" />
+    <item android:id="@+id/action_click_hide"
+        android:title="@string/action_click_hide"
+        android:orderInCategory="108"
+        app:showAsAction="never" />
     <item android:id="@+id/action_settings"
         android:title="@string/action_settings"
         android:orderInCategory="108"

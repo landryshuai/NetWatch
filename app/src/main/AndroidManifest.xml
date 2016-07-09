@@ -46,8 +46,15 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="info.noverguo.netwatch.ui.MainActivity" />
         </activity>
+        <activity android:name="info.noverguo.netwatch.ui.ClickHideActivity"
+            android:label="@string/app_click_hide"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="info.noverguo.netwatch.ui.MainActivity" />
+        </activity>
 
-        <service android:name="info.noverguo.netwatch.service.RemoteUrlService" android:exported="true">
+        <service android:name="info.noverguo.netwatch.service.RemoteService" android:exported="true">
             <intent-filter>
                 <action android:name="info.noverguo.netwatch.service.IUrlService"></action>
             </intent-filter>

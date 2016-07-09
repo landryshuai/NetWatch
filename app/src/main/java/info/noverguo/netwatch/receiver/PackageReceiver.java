@@ -6,7 +6,7 @@ import android.content.Intent;
 
 import info.noverguo.netwatch.BuildConfig;
 
-import info.noverguo.netwatch.tools.UrlsManager;
+import info.noverguo.netwatch.tools.AppDataManager;
 import info.noverguo.netwatch.utils.DLog;
 
 public class PackageReceiver extends BroadcastReceiver {
@@ -26,7 +26,7 @@ public class PackageReceiver extends BroadcastReceiver {
             if (BuildConfig.DEBUG) DLog.d("android.intent.action.PACKAGE_REMOVED: " + intent.getDataString());
             String dataString = intent.getDataString();
             if (dataString.startsWith("package:")) {
-                UrlsManager.get(context).removePackage(dataString.substring("package:".length()).trim());
+                AppDataManager.get(context).removePackage(dataString.substring("package:".length()).trim());
             }
         }
     }

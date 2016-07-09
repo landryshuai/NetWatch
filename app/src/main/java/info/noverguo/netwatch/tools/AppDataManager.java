@@ -19,7 +19,7 @@ import info.noverguo.netwatch.model.PackageUrlSet;
 import info.noverguo.netwatch.model.UrlRule;
 import info.noverguo.netwatch.model.UrlsMatcher;
 import info.noverguo.netwatch.receiver.ReloadReceiver;
-import info.noverguo.netwatch.service.LocalUrlService;
+import info.noverguo.netwatch.service.LocalService;
 import info.noverguo.netwatch.utils.DLog;
 import info.noverguo.netwatch.utils.RxJavaUtils;
 import info.noverguo.netwatch.utils.UrlServiceUtils;
@@ -29,33 +29,34 @@ import rx.functions.Action1;
  * Created by noverguo on 2016/5/28.
  */
 
-public class UrlsManager {
-    LocalUrlService urlService;
+public class AppDataManager {
+    LocalService urlService;
     Set<String> checkPackages = new HashSet<>();
     Map<String, PackageUrlSet> packageBlackUrls = new HashMap<>();
     Map<String, PackageUrlSet> packageUrls = new HashMap<>();
     Map<String, String> md5Map = new HashMap<>();
     Map<String, UrlsMatcher> urlsMatcherMap = new HashMap<>();
+    Set<String> clickHidePackages = new HashSet<>();
     Context context;
     PrefSetting setting;
     Handler bgHandler;
     HandlerThread bgThread;
 
-    private static UrlsManager sInst;
-    public static UrlsManager get(Context context) {
+    private static AppDataManager sInst;
+    public static AppDataManager get(Context context) {
         if (sInst == null) {
-            synchronized (UrlsManager.class) {
+            synchronized (AppDataManager.class) {
                 if (sInst == null) {
-                    sInst = new UrlsManager(context);
+                    sInst = new AppDataManager(context);
                 }
             }
         }
         return sInst;
     }
 
-    private UrlsManager(Context context) {
+    private AppDataManager(Context context) {
         this.context = context.getApplicationContext();
-        this.urlService = new LocalUrlService(context);
+        this.urlService = new LocalService(context);
         setting = new PrefSetting(context);
         bgThread = new HandlerThread("urls-manager");
         bgThread.start();
@@ -64,12 +65,25 @@ public class UrlsManager {
     }
 
     public void load() {
+        initClickHidePackages();
         initUncheckPackages();
         initMd5();
     }
 
+    private void initClickHidePackages() {
+        RxJavaUtils.io2io(setting.getClickHidePackage()).subscribe(new Action1<Set<String>>() {
+            @Override
+            public void call(Set<String> res) {
+                synchronized (md5Map) {
+                    clickHidePackages.clear();
+                    clickHidePackages.addAll(res);
+                }
+            }
+        });
+    }
+
     private void initUncheckPackages() {
-        RxJavaUtils.io2io(setting.getUncheckPackage()).subscribe(new Action1<Set<String>>() {
+        RxJavaUtils.io2io(setting.getCheckPackage()).subscribe(new Action1<Set<String>>() {
             @Override
             public void call(Set<String> res) {
                 synchronized (md5Map) {
@@ -344,5 +358,21 @@ public class UrlsManager {
 
     public boolean needCheck(String packageName) {
         return checkPackages.contains(packageName);
+    }
+
+    public void addClickHidePackage(String packageName) {
+        clickHidePackages.add(packageName);
+        ReloadReceiver.sendReloadClickHide(context, packageName);
+        setting.putClickHidePackage(clickHidePackages);
+    }
+
+    public void removeClickHidePackage(String packageName) {
+        clickHidePackages.remove(packageName);
+        ReloadReceiver.sendReloadClickHide(context, packageName);
+        setting.putClickHidePackage(clickHidePackages);
+    }
+
+    public boolean checkClickHide(String packageName) {
+        return clickHidePackages.contains(packageName);
     }
 }

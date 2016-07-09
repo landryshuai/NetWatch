@@ -9,7 +9,7 @@ import info.noverguo.netwatch.BuildConfig;
  */
 public class DLog {
     private static final String TAG = "Xposed";
-    public static final boolean d = false;
+    public static final boolean d = true;
     private static String head = "";
     public static void setHead(String h) {
         head = h + ": ";

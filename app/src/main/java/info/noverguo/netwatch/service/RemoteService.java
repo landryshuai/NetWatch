@@ -9,20 +9,20 @@ import android.support.annotation.Nullable;
 import info.noverguo.netwatch.BuildConfig;
 
 import info.noverguo.netwatch.model.UrlRule;
-import info.noverguo.netwatch.tools.UrlsManager;
+import info.noverguo.netwatch.tools.AppDataManager;
 import info.noverguo.netwatch.utils.DLog;
 
 /**
  * Created by noverguo on 2016/5/10.
  */
-public class RemoteUrlService extends Service {
+public class RemoteService extends Service {
 
 
-    UrlsManager urlsManager;
+    AppDataManager appDataManager;
     @Override
     public void onCreate() {
         super.onCreate();
-        urlsManager = UrlsManager.get(getApplicationContext());
+        appDataManager = AppDataManager.get(getApplicationContext());
     }
 
     @Override
@@ -36,8 +36,8 @@ public class RemoteUrlService extends Service {
         return new IUrlService.Stub() {
             @Override
             public boolean checkIsInterceptUrl(final String packageName, final String url, String host, String path) throws RemoteException {
-                urlsManager.addPackageUrl(packageName, url);
-                boolean res = urlsManager.checkIsIntercept(packageName, host, path);
+                appDataManager.addPackageUrl(packageName, url);
+                boolean res = appDataManager.checkIsIntercept(packageName, host, path);
                 if (BuildConfig.DEBUG) DLog.i("onBind.checkIsInterceptUrl: " + ", " + host + path + ", " + res);
                 return res;
             }
@@ -45,19 +45,24 @@ public class RemoteUrlService extends Service {
             @Override
             public UrlRule queryRules(String packageName) throws RemoteException {
                 if (BuildConfig.DEBUG) DLog.i("onBind.queryRule: " + packageName);
-                return urlsManager.queryRules(packageName);
+                return appDataManager.queryRules(packageName);
             }
 
             @Override
             public boolean checkUpdate(String packageName, String md5) throws RemoteException {
-                boolean needUpdate = urlsManager.chechUpdate(packageName, md5);
+                boolean needUpdate = appDataManager.chechUpdate(packageName, md5);
                 if (BuildConfig.DEBUG) DLog.i("onBind.checkUpdate: " + packageName, md5, needUpdate);
                 return needUpdate;
             }
 
             @Override
             public boolean needCheck(String packageName) throws RemoteException {
-                return urlsManager.needCheck(packageName);
+                return appDataManager.needCheck(packageName);
+            }
+
+            @Override
+            public boolean checkClickHide(String packageName) throws RemoteException {
+                return appDataManager.checkClickHide(packageName);
             }
         };
     }

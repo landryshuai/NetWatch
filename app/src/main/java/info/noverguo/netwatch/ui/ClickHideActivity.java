@@ -9,24 +9,23 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import info.noverguo.netwatch.BuildConfig;
-import info.noverguo.netwatch.R;
-
 import butterknife.Bind;
 import butterknife.ButterKnife;
-import info.noverguo.netwatch.adapter.FilterAdapter;
+import info.noverguo.netwatch.BuildConfig;
+import info.noverguo.netwatch.R;
+import info.noverguo.netwatch.adapter.ClickHideAdapter;
 import info.noverguo.netwatch.tools.AppDataManager;
 import info.noverguo.netwatch.utils.DLog;
 
-public class FilterActivity extends AppCompatActivity {
-    final static String TAG = FilterActivity.class.getSimpleName();
+public class ClickHideActivity extends AppCompatActivity {
+    final static String TAG = ClickHideActivity.class.getSimpleName();
     @Bind(R.id.rv_urls)
     RecyclerView mRecyclerView;
     @Bind(R.id.toolbar)
     Toolbar mToolbar;
     @Bind(R.id.fab)
     FloatingActionButton mFab;
-    FilterAdapter filterAdapter;
+    ClickHideAdapter clickHideAdapter;
     AppDataManager appDataManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,8 +48,8 @@ public class FilterActivity extends AppCompatActivity {
     private void initData() {
         if (BuildConfig.DEBUG) DLog.i("initData start");
         appDataManager = AppDataManager.get(getApplicationContext());
-        filterAdapter = new FilterAdapter(getApplicationContext());
-        mRecyclerView.setAdapter(filterAdapter);
+        clickHideAdapter = new ClickHideAdapter(getApplicationContext());
+        mRecyclerView.setAdapter(clickHideAdapter);
     }
     @Override
     protected void onResume() {

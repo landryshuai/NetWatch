@@ -1,6 +1,8 @@
 package info.noverguo.netwatch.xposed;
 
 import de.robv.android.xposed.XC_MethodHook;
+import info.noverguo.netwatch.BuildConfig;
+import info.noverguo.netwatch.utils.DLog;
 
 public class MethodHook extends XC_MethodHook {
 	public static boolean inHook = false;
@@ -14,7 +16,7 @@ public class MethodHook extends XC_MethodHook {
 		try {
 			beforeHooked(param);
 		} catch(Throwable e) {
-//			DLog.d(e);
+			if (BuildConfig.DEBUG) DLog.d(e);
 		}
 		inHook = false;
 	}
@@ -28,7 +30,7 @@ public class MethodHook extends XC_MethodHook {
 		try {
 			afterHooked(param);
 		} catch(Throwable e) {
-//			DLog.d(e);
+			if (BuildConfig.DEBUG) DLog.d(e);
 		}
 		inHook = false;
 	}
@@ -42,7 +44,7 @@ public class MethodHook extends XC_MethodHook {
 		try {
 			calling(param);
 		} catch(Throwable e) {
-//			DLog.d(e);
+			if (BuildConfig.DEBUG) DLog.d(e);
 		}
 		inHook = false;
 	}

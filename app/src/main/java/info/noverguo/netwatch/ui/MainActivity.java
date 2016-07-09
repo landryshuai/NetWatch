@@ -33,7 +33,7 @@ import info.noverguo.netwatch.adapter.MultiSelectRecyclerViewAdapter;
 import info.noverguo.netwatch.model.PackageUrl;
 import info.noverguo.netwatch.model.PackageUrlSet;
 import info.noverguo.netwatch.receiver.ReloadReceiver;
-import info.noverguo.netwatch.tools.UrlsManager;
+import info.noverguo.netwatch.tools.AppDataManager;
 import info.noverguo.netwatch.utils.BrowserUtils;
 import info.noverguo.netwatch.utils.DLog;
 import info.noverguo.netwatch.utils.UrlServiceUtils;
@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
     @Bind(R.id.fab)
     FloatingActionButton mFab;
     BlackRecyclerViewAdapter blackAdapter;
-    UrlsManager urlsManager;
+    AppDataManager appDataManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
     }
     int mSelectCount;
     private void initData() {
-        urlsManager = UrlsManager.get(getApplicationContext());
+        appDataManager = AppDataManager.get(getApplicationContext());
         blackAdapter = new BlackRecyclerViewAdapter(getApplicationContext(), new BlackRecyclerViewAdapter.ItemClickListener() {
             @Override
             public void onItemClick(PackageUrl item, List<PackageUrl> interceptItems) {
@@ -174,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
         Schedulers.io().createWorker().schedule(new Action0() {
             @Override
             public void call() {
-                blackAdapter.setUrls(urlsManager.getBlackList(), urlsManager.getUrlList());
+                blackAdapter.setUrls(appDataManager.getBlackList(), appDataManager.getUrlList());
             }
         });
     }
@@ -209,6 +209,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQ_ADD = 1;
     private static final int REQ_FILTER = 2;
+    private static final int REQ_CLICK_HIDE = 3;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -225,6 +226,8 @@ public class MainActivity extends AppCompatActivity {
             cancelSelected();
         } else if (id == R.id.action_filter) {
             startActivityForResult(new Intent(this, FilterActivity.class), REQ_FILTER);
+        } else if (id == R.id.action_click_hide) {
+            startActivityForResult(new Intent(this, ClickHideActivity.class), REQ_CLICK_HIDE);
         } else {
             return super.onOptionsItemSelected(item);
         }
@@ -254,7 +257,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onInput(MaterialDialog dialog, CharSequence input) {
                         canChange = true;
-                        urlsManager.addBlackUrls(Arrays.asList(new PackageUrlSet(UrlServiceUtils.USER_ADD_PACKAGE, Arrays.asList(input.toString()))));
+                        appDataManager.addBlackUrls(Arrays.asList(new PackageUrlSet(UrlServiceUtils.USER_ADD_PACKAGE, Arrays.asList(input.toString()))));
                         blackAdapter.clearSelectedState();
                     }
                 })
@@ -276,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onInput(MaterialDialog dialog, CharSequence input) {
                         canChange = true;
-                        urlsManager.replaceBlackUrl(item.packageName, item.url, input.toString());
+                        appDataManager.replaceBlackUrl(item.packageName, item.url, input.toString());
                         blackAdapter.clearSelectedState();
                     }
                 })
@@ -286,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void removeBlackUrls() {
         canChange = true;
-        urlsManager.removeBlackUrls(blackAdapter.getSelectUrls());
+        appDataManager.removeBlackUrls(blackAdapter.getSelectUrls());
         blackAdapter.clearSelectedState();
     }
 }

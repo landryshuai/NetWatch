@@ -28,13 +28,13 @@ import info.noverguo.netwatch.tools.AppDataManager;
  * Created by noverguo on 2016/6/5.
  */
 
-public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.FilterViewHolder> {
+public class ClickHideAdapter extends RecyclerView.Adapter<ClickHideAdapter.FilterViewHolder> {
     private final LayoutInflater mLayoutInflater;
     List<PackageInfo> installedPackages;
     PackageManager mPackageManager;
     AppDataManager appDataManager;
     Context mContext;
-    public FilterAdapter(Context context) {
+    public ClickHideAdapter(Context context) {
         mContext = context.getApplicationContext();
         mLayoutInflater = LayoutInflater.from(context);
         mPackageManager = context.getPackageManager();
@@ -60,15 +60,15 @@ public class FilterAdapter extends RecyclerView.Adapter<FilterAdapter.FilterView
     public void onBindViewHolder(FilterViewHolder holder, int position) {
         final PackageInfo item = installedPackages.get(position);
         holder.mFilter.setTag(item.packageName);
-        holder.mFilter.setChecked(appDataManager.needCheck(item.packageName));
+        holder.mFilter.setChecked(appDataManager.checkClickHide(item.packageName));
         holder.mFilter.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 String pkg = (String) buttonView.getTag();
                 if (isChecked) {
-                    appDataManager.addCheckPackage(pkg);
+                    appDataManager.addClickHidePackage(pkg);
                 } else {
-                    appDataManager.removeCheckPackage(pkg);
+                    appDataManager.removeClickHidePackage(pkg);
                 }
             }
         });

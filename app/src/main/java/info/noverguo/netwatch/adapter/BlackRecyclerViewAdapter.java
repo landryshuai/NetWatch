@@ -18,7 +18,7 @@ import info.noverguo.netwatch.BuildConfig;
 import info.noverguo.netwatch.R;
 import info.noverguo.netwatch.model.PackageUrl;
 import info.noverguo.netwatch.model.PackageUrlSet;
-import info.noverguo.netwatch.tools.UrlsManager;
+import info.noverguo.netwatch.tools.AppDataManager;
 import info.noverguo.netwatch.utils.DLog;
 import info.noverguo.netwatch.utils.SizeUtils;
 import info.noverguo.netwatch.utils.UrlServiceUtils;
@@ -47,7 +47,7 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
     private final LayoutInflater mLayoutInflater;
     private final Context mContext;
     private final PackageManager mPackageManager;
-    private UrlsManager urlsManager;
+    private AppDataManager appDataManager;
     private int allCount = 0;
     private int showCount = 0;
     private SparseArray<PackageUrlSet> headItemIndexes = new SparseArray<>();
@@ -67,7 +67,7 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
                 switchSelectedState(position);
             } else {
                 if (itemClickListener != null) {
-                    itemClickListener.onItemClick(getItem(position), interceptItemIndexes.get(position));
+                    itemClickListener.onItemClick(getItem(position), interceptItemIndexes.get(fixPos(position)));
                 }
             }
         }
@@ -84,7 +84,7 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
         mContext = context;
         mLayoutInflater = LayoutInflater.from(context);
         mPackageManager = mContext.getPackageManager();
-        urlsManager = UrlsManager.get(context);
+        appDataManager = AppDataManager.get(context);
         setClickListener(listener);
     }
 
@@ -114,13 +114,13 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
             _headShowMap.put(_count, false);
             _headItemIndexes.put(_count++, pus);
             if (UrlServiceUtils.isUserAddPackage(packageName)) {
-                List<PackageUrlSet> urlList = urlsManager.getUrlList();
+                List<PackageUrlSet> urlList = appDataManager.getUrlList();
                 for (String url : pus.relativeUrls) {
                     _contentItemIndexes.put(_count, new PackageUrl(packageName, url));
                     _interceptItemIndexes.put(_count++, UrlServiceUtils.getMatchPackageUrls(url, urlList));
                 }
             } else {
-                PackageUrlSet packageUrlSet = urlsManager.getPackageUrl(packageName);
+                PackageUrlSet packageUrlSet = appDataManager.getPackageUrl(packageName);
                 for (String url : pus.relativeUrls) {
                     _contentItemIndexes.put(_count, new PackageUrl(packageName, url));
                     _interceptItemIndexes.put(_count++, UrlServiceUtils.getMatchPackageUrls(url, packageUrlSet));
@@ -317,7 +317,7 @@ public class BlackRecyclerViewAdapter extends MultiSelectRecyclerViewAdapter<Bla
     Handler uiHandler;
     final int MSG_REMOVE_PACKAGE = 1;
     private void removePackageUrls(String packageName) {
-        urlsManager.removeBlack(packageName);
+        appDataManager.removeBlack(packageName);
         if (needRemovePackage == null) {
             needRemovePackage = new HashSet<>(1);
         }
